@@ -26,7 +26,7 @@ YGG.tutores = {
 YGG.destaques = [
   {
     cls: 'hpr', sex: 'm', t: 'Sumo Sacerdote Judex', tutor: 'rizakh', tags: ['Farm', 'Iniciante'], principal: true,
-    lv: 99, v: '0.2.1', d: '2026-11-24', exemplo: true,
+    lv: 99, v: '0.2.2', d: '2026-11-24', exemplo: true,
     desc: 'Card de exemplo: mostra como uma build de tutor aparece. Troque pelo código real enviado pelo tutor.',
     build: { cls: 'hpr', lv: 99, name: 'Sumo Sacerdote Judex' }
   }

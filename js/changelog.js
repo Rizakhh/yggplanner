@@ -4,6 +4,12 @@
 window.YGG = window.YGG || {};
 YGG.changelog = [
   {
+    v: '0.2.2', d: '2026-11-24', t: 'Hotfix dos pontos de atributo',
+    g: [
+      ['Atributos', ['Pontos de atributo iguais aos do YggIdle: o total por nível segue a tabela do servidor do jogo (3.330 pontos no nível 175 para as classes T, conferido num personagem real), e o custo para subir um atributo acima de 100 ficou certo (ex.: de 109 para 110 custa 20 pontos, e não 12).']]
+    ]
+  },
+  {
     v: '0.2.1', d: '2026-11-24', t: 'Revisão de habilidades e visual',
     g: [
       ['Habilidades', [

@@ -48,12 +48,15 @@
   // classes expandidas (Taekwon e evoluções, Super Aprendiz, Ninja, Justiceiro) não renascem.
   var EXPANDED = { sup: 1, gun: 1, nin: 1, tae: 1, sg: 1, sl: 1 };
   function isHigh(id) { var c = Y.classById[id]; return !!c && !EXPANDED[id] && c.tier >= 1 && c.tier !== 2; }
+  // total de pontos por nível = tabela de renewal do rAthena (db/re/statpoint.yml), que é o servidor do YggIdle;
+  // transcendentais (as 1ª classes "T" do YggIdle) ganham +52 (começam com 100). Conferido no jogo: Nv 175 T = 3.330 pontos.
+  var STATP = [48,51,54,57,60,64,68,72,76,80,85,90,95,100,105,111,117,123,129,135,142,149,156,163,170,178,186,194,202,210,219,228,237,246,255,265,275,285,295,305,316,327,338,349,360,372,384,396,408,420,433,446,459,472,485,499,513,527,541,555,570,585,600,615,630,646,662,678,694,710,727,744,761,778,795,813,831,849,867,885,904,923,942,961,980,1000,1020,1040,1060,1080,1101,1122,1143,1164,1185,1207,1229,1251,1273,1295,1318,1341,1364,1387,1410,1433,1456,1479,1502,1525,1549,1573,1597,1621,1645,1669,1693,1717,1741,1765,1790,1815,1840,1865,1890,1915,1940,1965,1990,2015,2041,2067,2093,2119,2145,2171,2197,2223,2249,2275,2302,2329,2356,2383,2410,2437,2464,2491,2518,2545,2573,2601,2629,2657,2685,2713,2741,2770,2799,2828,2857,2886,2915,2944,2974,3004,3034,3064,3094,3124,3154,3185,3216,3247,3278];
   function statPointsTotal(lv, cls) {
-    var p = cls && !isHigh(cls) ? 48 : 100;
-    for (var l = 2; l <= lv; l++) p += Math.floor((l - 1 + 15) / 5);
-    return p;
+    lv = Math.max(1, Math.min(STATP.length, lv | 0 || 1));
+    return STATP[lv - 1] + (cls && !isHigh(cls) ? 0 : 52);
   }
-  function statCost(v) { return Math.floor((v - 1) / 10) + 2; } // custo para ir de v para v+1
+  // custo para ir de v para v+1 (renewal): até 99 = (v-1)/10 + 2; de 100 em diante = 16 + 4 a cada 5 pontos acima de 100
+  function statCost(v) { return v < 100 ? Math.floor((v - 1) / 10) + 2 : 16 + 4 * Math.floor((v - 100) / 5); }
   function statSpent(stats) {
     var t = 0;
     ST.forEach(function (k) { for (var v = 1; v < stats[k]; v++) t += statCost(v); });
