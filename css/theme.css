@@ -1,0 +1,11 @@
+/* Identidade visual do YggIdle (cores e fontes lidas de yggidle.com.br): noite de Midgard, ouro, creme e Cinzel */
+:root{
+  --bg:#0d1a12; --bg2:#0a160f; --card:#162a1d; --card2:#1d3626; --card3:#244230;
+  --gold:#e8c477; --gold2:#b88a44; --brown:#6f4b2a; --brown2:#5a3c22; --green:#46613a; --green2:#3f582f;
+  --cream:#f2e8cf; --muted:#b9b095; --faint:#8a8570;
+  --line:rgba(184,138,68,.35); --line2:rgba(184,138,68,.18);
+  --ok:#5cba76; --bad:#e58b7a; --warn:#e8c477; --info:#6aa7d8;
+  --t1:#2f6b45; --t2:#2a5f86; --t3:#6b4a96; --t4:#944718; --t5:#765a11;
+  --font-display:'Cinzel',Georgia,serif; --font-body:'Inter',system-ui,'Segoe UI',Roboto,sans-serif;
+  --r:12px; --shadow:0 8px 28px rgba(0,0,0,.35);
+}

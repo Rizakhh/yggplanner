@@ -1,0 +1,91 @@
+// Changelog do YggPlanner — a primeira entrada é sempre a versão atual.
+// Regra: grande mudança → 0.(x+1).0 · hotfix estrutural → 0.x.(y+1) · hotfix leve (texto, imagem, bug leve) → mesmo número + "-hf1", "-hf2"…
+// O primeiro número só muda no lançamento final (1.0.0).
+window.YGG = window.YGG || {};
+YGG.changelog = [
+  {
+    v: '0.2.1', d: '2026-11-24', t: 'Revisão de habilidades e visual',
+    g: [
+      ['Habilidades', [
+        'Clicar numa habilidade avançada preenche sozinho os pré-requisitos (se houver pontos).',
+        'Árvores revisadas com as páginas oficiais de classes do YggIdle: só ficam as habilidades que a wiki diz que passam a ser da classe.',
+        'Saíram da árvore (vêm só de item ou Ascensão, aba Extra): Adoramus, Oratio, Perícia em Runas, Meteoro Escarlate, Ilimitar, Combo Rápido, Garra de Tigre, Esporo Explosivo, Farmacologia Especial e Distorção Crescente.',
+        'Requisitos corrigidos: Judex (Esconjurar 1), Temporal de Flechas (Menestrel: Flecha Melódica 5; Cigana: Estilingada 5), Punho Arcano (Desejo Arcano 4, até o nível 10), Dragão Ascendente (Invocar Esfera Espiritual 5) e Disparo Triplo sem requisito.',
+        'Judex com os valores do YggIdle: nível máximo 5, 1.320% a 3.000% de ATQM, área 5x5, alcance 11 e SP 23 / 29 / 34 / 38 / 42.',
+        'Dados do cliente oficial do jogo (jogo.yggidle.com.br): o custo de SP por nível de todas as habilidades segue o jogo, inclusive na simulação. Corrigidos Judex, Disparo Perfurante (7 a 12), Perfurar em Espiral (9 a 15), Arremesso de Machado (20 a 28), Rajada Certeira (12 a 30), Frenesi (150), Destruidor de Almas (60), Disparo de Esferas Espirituais (10), Brisa Cortante (25), Dança do Ventre (35 a 47), Crux Magnum (78 no Nv 7) e Passo Etéreo (1).',
+        'Tooltip mostra a descrição oficial do YggIdle, tirada do cliente do jogo, quando ela existe (133 habilidades).',
+        'Disparo Perfurante aproveita só 50% do bônus de dano crítico no acerto crítico, como no jogo.',
+        'Tooltip mostra primeiro “Como funciona no YggIdle”; a descrição e a tabela do bRO ficam marcadas como originais. Valores próprios do YggIdle para Adoramus, Disparo Perfurante e Perfurar em Espiral.'
+      ]],
+      ['Classes', [
+        'As 1ª classes são as “T” (transcendentais): começam no nível 1 com 100 pontos de atributo e +25% de HP e SP.',
+        'Guia do Sumo Sacerdote refeito em torno do Judex.'
+      ]],
+      ['Guia', ['Anotações pessoais ficam salvas no guia e vão junto no Link e no Exportar, para quem receber a build ler. As anotações antigas, guardadas só no navegador, são migradas sozinhas.']],
+      ['Visual', ['Logo nova do Planner em SVG no cabeçalho (selo com a Yggdrasil e estrela-guia), no lugar do texto “YggPlanner”, e ícone da aba com o mesmo selo.']],
+      ['Estatísticas', ['Painel lateral com o mesmo visual do resto do app; categorias abrem e fecham clicando no título, sem caixa escura por trás.']],
+      ['Mapas', [
+        'Custo de entrada a partir do T3, com e sem VIP (T3: 125k VIP / 250k sem VIP; T4: 250k VIP / 500k sem VIP), na rota de mapas do guia, no seletor, na ampliação do mapa e na simulação.',
+        'Rota de mapas do guia começa vazia e é dividida pelas etapas das missões de liberação de tier: Nv 1–31 (T1), 32–64 (missão do T2), 65–98 (missão do T3) e 99–175 (missão do T4). Cada etapa tem “+ Adicionar” e cada mapa tem “✕ Remover”, em destaque.',
+        'O nível mínimo e máximo de cada mapa é livre (1 a 175) e fica direto no card, sem limite pela etapa.',
+        'Os níveis 32, 65 e 99 (missões que liberam o tier seguinte) aparecem marcados na régua de nível; mapa colocado antes da missão do seu tier ganha um aviso.',
+        'O seletor de mapas mostra primeiro os sugeridos para a etapa e, abaixo, todos os outros, que também podem ser adicionados.',
+        'O “!” do comentário fica ao lado do nome do mapa, e não mais em cima da imagem.',
+        'EXP por diferença de nível: cada monstro mostra quanto % da EXP o personagem recebe no nível do guia, e o card mostra a média do mapa. Até 2 níveis acima ou 5 abaixo: 100%; 3 a 9 acima: 102% a 120%; 10 a 14 acima: 40%; 15 acima: 20%; 16 ou mais acima: 5%; abaixo: 95% (6–10), 90% (11–15), 85% (16–20), 60% (21–25), 35% (26–30) e 10% (31 ou mais).',
+        'Mapas T5 aparecem como bloqueados (ainda não existem no YggIdle) e não podem ser adicionados ao guia.',
+        'No seletor, mapas cujos monstros estão 9 ou mais níveis abaixo do nível do guia ficam em cinza com a tag “Não recomendado” e a % de EXP que o personagem recebe. Eles continuam podendo ser adicionados.'
+      ]],
+      ['Itens', ['370 itens sem descrição na wiki ganharam a descrição oficial em português do cliente do jogo.']],
+      ['Rodapé', ['O nome Rizakh já leva para a Twitch; saiu o endereço entre parênteses.']],
+      ['Simulação', ['Cenário novo: céu e chão no tom de cada zona, miniatura do mapa, sombras, barras de HP/SP e dano flutuante.']]
+    ]
+  },
+  {
+    v: '0.2.0', d: '2026-11-24', t: 'Painel de estatísticas completo',
+    g: [
+      ['Estatísticas', [
+        'Painel no formato do ALT+A do jogo: ATQ, ATQ Mágico, P.ATQ, S.ATQM, DEF, DEF Mágica, RES, MRES, Precisão, Esquiva, Esquiva Perfeita, Crítico e Vel. de Ataque.',
+        'Novas seções: Ignora defesa (com excedente acima de 100%), Dano, Defesa e utilidade, Experiência e drop e Atributos de bônus.',
+        'Todos os bônus aparecem com nome e valor legíveis (substitui a lista “Todos os bônus somados”, que não mostrava valores úteis).',
+        'Estatísticas e Traços de 4ª classe podem ser minimizados; o planner lembra o que ficou fechado.',
+        'Chave ON/OFF de Sombrio, Inferno e Abismo direto no painel de traços.'
+      ]],
+      ['Classes', [
+        'Removidos o Aprendiz e as 2ª classes comuns, que não existem no YggIdle; builds salvas com elas migram para a transcendental.',
+        'Seletor em três fileiras: primeiras classes, transcendentais e expandidas por último.'
+      ]],
+      ['Consumíveis', [
+        'Todos os 378 consumíveis da wiki listados, separados por categoria com contagem.',
+        'Mais efeitos reconhecidos: EXP, drop, EXP do Caos, regeneração e velocidade de movimento.'
+      ]],
+      ['Árvore do Caos', ['EXP, drop, Sacola de Zeny, regeneração e resistências a status agora aparecem no painel de estatísticas.']],
+      ['Geral', ['Builds novas começam no nível 175 (nível máximo).']]
+    ]
+  },
+  {
+    v: '0.1.0', d: '2026-11-24', t: 'Versão inicial',
+    g: [
+      ['Build', [
+        'Classes do YggIdle com atributos, talentos (4ª classe) e progressão ponto a ponto por nível.',
+        'Equipamentos com refino, cartas, encantamentos e bônus de conjunto.',
+        'Salvar, exportar, importar e compartilhar builds por link.'
+      ]],
+      ['Habilidades', [
+        'Árvore real de pré-requisitos com ligações e nível exigido.',
+        'Tooltip completo: descrição, SP, conjuração, recarga, alcance, tabela nível a nível e dano contra o monstro simulado.',
+        'Progressão de habilidades por nível no guia, com aplicar/copiar da árvore.',
+        'Aba Extra com habilidades concedidas por itens, cartas, pergaminhos e Ascensão.'
+      ]],
+      ['Sistemas', [
+        'Consumíveis com ícones, descrições e efeitos originais somados às estatísticas.',
+        'Árvore do Caos completa: mapa, custos, grupos exclusivos, lado Yang/Ying e Ascensão por classe.',
+        'Fórmulas do jogo com valores da build e destaque das alteradas no YggIdle.'
+      ]],
+      ['Simulação', [
+        'Cenário com fundo do mapa, personagem e monstro.',
+        'Painel de estatísticas no estilo ALT+A.',
+        'Dano esperado por golpe, crítico, uso, ciclo, DPS e usos para matar.'
+      ]]
+    ]
+  }
+];

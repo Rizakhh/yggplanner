@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>YggPlanner · Build Planner do YggIdle</title>
+<meta name="description" content="Planner de builds para o YggIdle: atributos, equipamentos, habilidades, guias por classe e simulação contra monstros.">
+<meta name="theme-color" content="#0d1a12">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 46 46'%3E%3Ccircle cx='23' cy='23' r='21' fill='%2316301f' stroke='%23e8c477' stroke-width='2.5'/%3E%3Cg fill='none' stroke='%23e8c477' stroke-width='2.6' stroke-linecap='round'%3E%3Cpath d='M23 35V10M23 25C20 23 17 22 13 18M23 25C26 23 29 22 33 18M23 21C21 19 19 17 17.5 12.5M23 21C25 19 27 17 28.5 12.5M23 34C20 35 17 35.5 13 37M23 34C26 35 29 35.5 33 37'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/theme.css">
+<link rel="stylesheet" href="css/style2.css">
+<link rel="stylesheet" href="css/style3.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand"><img class="ylogo" src="https://yggidle.com.br/_next/static/media/logo-yggidle-recorte.41ry12svs9grr.webp" alt="YggIdle" onerror="this.remove()"><span class="bt"><svg class="plogo" viewBox="0 0 168 46" role="img" aria-label="Planner">
+      <defs>
+        <linearGradient id="pgG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fbe7b0"/><stop offset=".55" stop-color="#d9ac5c"/><stop offset="1" stop-color="#8f6a2c"/></linearGradient>
+        <radialGradient id="pgB" cx=".5" cy=".42" r=".62"><stop offset="0" stop-color="#2f5236"/><stop offset=".7" stop-color="#16301f"/><stop offset="1" stop-color="#0b1a10"/></radialGradient>
+        <radialGradient id="pgL" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff3c9" stop-opacity=".9"/><stop offset="1" stop-color="#e8c477" stop-opacity="0"/></radialGradient>
+      </defs>
+      <!-- selo: anel dourado com marcas de bússola -->
+      <circle cx="23" cy="23" r="20.5" fill="url(#pgB)" stroke="url(#pgG)" stroke-width="2"/>
+      <circle cx="23" cy="23" r="17" fill="none" stroke="#b88a44" stroke-width=".7" stroke-dasharray="1.2 2.4" opacity=".75"/>
+      <path d="M23 1.5v4M23 40.5v4M1.5 23h4M40.5 23h4" stroke="#e8c477" stroke-width="1.6" stroke-linecap="round"/>
+      <!-- copa da Yggdrasil -->
+      <circle cx="23" cy="17" r="10" fill="url(#pgL)" opacity=".35"/>
+      <g fill="none" stroke="url(#pgG)" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M23 25C20 23 17 22 14 18.6" stroke-width="1.5"/>
+        <path d="M23 25C26 23 29 22 32 18.6" stroke-width="1.5"/>
+        <path d="M23 21.5C21 19 19.2 17 17.6 13.2" stroke-width="1.4"/>
+        <path d="M23 21.5C25 19 26.8 17 28.4 13.2" stroke-width="1.4"/>
+        <path d="M23 20V9.5" stroke="#e8c477" stroke-width="1.4"/>
+        <path d="M22.6 33.5C19.6 34.4 16.6 34.8 13.4 36.2M23.4 33.5C26.4 34.4 29.4 34.8 32.6 36.2M23 33.5v3.6" stroke="#c99a52" stroke-width="1.1" opacity=".85"/>
+      </g>
+      <path d="M21.4 34.2C21.9 30 21.9 25 21.7 19.5h2.6C24.1 25 24.1 30 24.6 34.2Z" fill="url(#pgG)"/>
+      <g fill="#fff0c4"><circle cx="14" cy="18.6" r="1.7"/><circle cx="32" cy="18.6" r="1.7"/><circle cx="17.6" cy="13.2" r="1.6"/><circle cx="28.4" cy="13.2" r="1.6"/></g>
+      <!-- estrela-guia no topo -->
+      <path d="M23 4.6l1.3 3.6 3.6 1.3-3.6 1.3L23 14.4l-1.3-3.6-3.6-1.3 3.6-1.3Z" fill="#fff6d8"/>
+      <!-- nome -->
+      <text x="54" y="29" font-family="Cinzel, serif" font-weight="800" font-size="23" letter-spacing="1.2" fill="url(#pgG)">Planner</text>
+      <path d="M56 37.5h46" stroke="#b88a44" stroke-width="1" opacity=".8"/><path d="M105 37.5l3-2.6 3 2.6-3 2.6Z" fill="#e8c477"/><path d="M114 37.5h46" stroke="#b88a44" stroke-width="1" opacity=".8"/>
+    </svg><small id="ver">v0.2.1</small></span></div>
+  <div class="ident">
+    <button id="bCls" class="clsbtn" title="Trocar classe"></button>
+    <div class="idcol">
+      <div class="idrow"><input id="bName" class="name" placeholder="Nome da build" maxlength="60"></div>
+      <div class="idrow"><label class="lvl">Nível <input id="bLv" type="number" min="1" max="175" class="num"></label></div>
+    </div>
+  </div>
+  <span class="grow"></span>
+  <div class="actions">
+    <button id="btnNew" class="ghost" title="Nova build">Nova</button>
+    <button id="btnSave" class="pri" title="Salvar na biblioteca (Ctrl+S)">Salvar</button>
+    <button id="btnLib" title="Suas builds salvas">Minhas builds</button>
+    <span class="sep"></span>
+    <button id="btnExport" class="ghost">Exportar</button>
+    <button id="btnImport" class="ghost">Importar</button>
+    <button id="btnShare" class="ghost" title="Copia o link com a build">Link</button>
+  </div>
+</header>
+<main class="layout">
+  <section class="left">
+    <nav class="tabs" id="tabs">
+      <button data-tab="guide" class="on"><i>✦</i>Guia</button>
+      <button data-tab="status"><i>◈</i>Status</button>
+      <button data-tab="equip"><i>⚔</i>Equipamentos</button>
+      <button data-tab="skills"><i>✧</i>Habilidades e buffs</button>
+      <button data-tab="cons"><i>✚</i>Consumíveis</button>
+      <button data-tab="caos"><i>❂</i>Árvore do Caos</button>
+      <button data-tab="sim"><i>⚑</i>Simulação</button>
+      <button data-tab="form"><i>∑</i>Fórmulas</button>
+    </nav>
+    <div id="tab"></div>
+  </section>
+  <aside class="right" id="stats"></aside>
+</main>
+<footer class="foot"><span>YggPlanner <b id="fver">v0.2.1</b> · <a href="#changelog" id="chlogLink">Changelog</a> · criado por <a href="https://www.twitch.tv/rizakh" target="_blank" rel="noopener" title="Canal na Twitch">Rizakh</a></span><span>Projeto de fã, sem fins lucrativos e sem ligação oficial com o YggIdle. Dados, ícones e descrições da wiki do YggIdle; arte de Ragnarok Online © Gravity.</span></footer>
+<div id="modal" class="modal hidden"><div class="box"><div id="modalBody"></div></div></div>
+<div id="toast" class="toast hidden"></div>
+<script src="data/ra.js"></script>
+<script src="data/bonus.js"></script>
+<script src="data/items.js"></script>
+<script src="data/gitems.js"></script>
+<script src="data/monsters.js"></script>
+<script src="data/maps.js"></script>
+<script src="data/jobs.js"></script>
+<script src="data/guides.js"></script>
+<script src="data/tree.js"></script>
+<script src="data/mapmobs.js"></script>
+<script src="data/skilldesc.js"></script>
+<script src="data/game.js"></script>
+<script src="data/consum.js"></script>
+<script src="data/caos.js"></script>
+<script src="js/changelog.js"></script>
+<script src="js/portraits.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/damage.js"></script>
+<script src="js/app2.js"></script>
+</body>
+</html>
