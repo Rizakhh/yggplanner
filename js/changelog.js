@@ -23,6 +23,7 @@ YGG.changelog = [
       ]],
       ['Guia', ['Anotações pessoais ficam salvas no guia e vão junto no Link e no Exportar, para quem receber a build ler. As anotações antigas, guardadas só no navegador, são migradas sozinhas.']],
       ['Visual', ['Logo nova do Planner em SVG no cabeçalho (selo com a Yggdrasil e estrela-guia), no lugar do texto “YggPlanner”, e ícone da aba com o mesmo selo.']],
+      ['Celular', ['Versão para celular e tablet corrigida, em pé e deitado: a página não passa mais da largura da tela, as abas rolam para o lado, o cabeçalho fica compacto, tabelas largas rolam dentro do próprio quadro e as janelas cabem na tela mesmo com o celular deitado.']],
       ['Estatísticas', ['Painel lateral com o mesmo visual do resto do app; categorias abrem e fecham clicando no título, sem caixa escura por trás.']],
       ['Mapas', [
         'Custo de entrada a partir do T3, com e sem VIP (T3: 125k VIP / 250k sem VIP; T4: 250k VIP / 500k sem VIP), na rota de mapas do guia, no seletor, na ampliação do mapa e na simulação.',
@@ -34,6 +35,16 @@ YGG.changelog = [
         'EXP por diferença de nível: cada monstro mostra quanto % da EXP o personagem recebe no nível do guia, e o card mostra a média do mapa. Até 2 níveis acima ou 5 abaixo: 100%; 3 a 9 acima: 102% a 120%; 10 a 14 acima: 40%; 15 acima: 20%; 16 ou mais acima: 5%; abaixo: 95% (6–10), 90% (11–15), 85% (16–20), 60% (21–25), 35% (26–30) e 10% (31 ou mais).',
         'Mapas T5 aparecem como bloqueados (ainda não existem no YggIdle) e não podem ser adicionados ao guia.',
         'No seletor, mapas cujos monstros estão 9 ou mais níveis abaixo do nível do guia ficam em cinza com a tag “Não recomendado” e a % de EXP que o personagem recebe. Eles continuam podendo ser adicionados.'
+      ]],
+      ['Tutores', [
+        'Aba nova “Tutores” com as builds recomendadas pelos tutores de cada classe, em cards com o sprite do personagem, rótulos (Farm, Chefe, Iniciante…), resumo, tutor e data.',
+        'A build principal de cada classe fica fixada no topo com o selo “★ Principal”.',
+        'Cada card mostra em que versão do planner a build foi montada e avisa quando ela pode estar desatualizada.',
+        'Filtros por classe atual ou todas as classes, por rótulo e busca por título, classe ou tutor.',
+        'Perfil do tutor com descrição, links (Twitch, Discord…) e todas as builds dele.',
+        '“Abrir no planner” carrega a build inteira (com guia e anotações); “Link” copia o link dela.',
+        '“Enviar minha build” gera um bloco pronto, com a build atual, para o tutor mandar para revisão. Sem login: as builds entram por curadoria.',
+        'O Guia avisa quando existe build de tutor para a classe.'
       ]],
       ['Itens', ['370 itens sem descrição na wiki ganharam a descrição oficial em português do cliente do jogo.']],
       ['Rodapé', ['O nome Rizakh já leva para a Twitch; saiu o endereço entre parênteses.']],

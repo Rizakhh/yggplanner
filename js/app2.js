@@ -457,7 +457,7 @@
   // ---------- aba Status ----------
   function drawTab() {
     var t = $('#tab'); t.innerHTML = ''; hideTip();
-    var F = { guide: tabGuide, status: tabStatus, equip: tabEquip, skills: tabSkills, cons: tabCons, caos: tabCaos, sim: tabSim, form: tabForm }; if (!F[tab]) tab = 'guide';
+    var F = { guide: tabGuide, tut: tabTut, status: tabStatus, equip: tabEquip, skills: tabSkills, cons: tabCons, caos: tabCaos, sim: tabSim, form: tabForm }; if (!F[tab]) tab = 'guide';
     F[tab](t);
   }
   function goTab(name) { tab = name; document.querySelectorAll('#tabs button').forEach(function (x) { x.classList.toggle('on', x.dataset.tab === name); }); drawTab(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
@@ -688,6 +688,9 @@
     if (gLv == null) gLv = b.lv;
     var L = gLv;
     var dots = h('span', { class: 'diff', title: 'Dificuldade' }); for (var i = 1; i <= 3; i++) dots.appendChild(h('i', { class: i <= (g0.diff || 1) ? 'on' : '' }));
+    var nTut = tutCount(b.cls);
+    if (nTut) t.appendChild(h('button', { class: 'tutcall', style: '--lc:' + col, on: { click: function () { tutF.cls = 'cur'; goTab('tut'); } } },
+      ['★ ' + nTut + ' build' + (nTut === 1 ? '' : 's') + ' de tutor para ' + cl.n, h('span', null, ['ver ▸'])]));
     // banner
     t.appendChild(h('div', { class: 'banner', style: '--lc:' + col }, [
       h('div', { class: 'bpf' }, [h('span', { class: 'rune' }), h('span', { class: 'motes' }), h('span', { class: 'ped' }), spriteEl(b.cls, 'big')]),
@@ -1988,6 +1991,127 @@
     });
     t.appendChild(grid);
   }
+
+  // ---------- aba Tutores (builds recomendadas, curadoria em data/destaques.js) ----------
+  var TUT = Y.tutores || {}, DEST = (Y.destaques || []).map(function (x, i) { return Object.assign({ _i: i }, x); });
+  var TAGC = { farm: '#74b85a', chefe: '#d0613f', iniciante: '#5f8de0', pvp: '#a274d8', suporte: '#e6c86b', endgame: '#e8c477' };
+  var tutF = { cls: 'cur', tag: null, q: '' };
+  function verCmp(a, b2) { a = String(a || '0').split('.'); b2 = String(b2 || '0').split('.'); for (var i = 0; i < 3; i++) { var d = (+a[i] || 0) - (+b2[i] || 0); if (d) return d; } return 0; }
+  function destBuild(d) {
+    var o = d.code ? fromCode(d.code) : Object.assign({}, d.build || {});
+    o.cls = o.cls || d.cls; if (!o.name) o.name = d.t; if (d.lv && !o.lv) o.lv = d.lv; if (d.sex && !o.sex) o.sex = d.sex;
+    return ensure(o);
+  }
+  function destLink(d) { return location.href.split('#')[0] + '#b=' + encodeURIComponent(toCode(destBuild(d))); }
+  function openDest(d) {
+    var lib = libGet();
+    if (!(curId && lib[curId] && savedSnap === snap()) && !confirm('Abrir “' + d.t + '”? A build atual tem alterações não salvas e será substituída.')) return;
+    try { b = destBuild(d); } catch (e) { toast('Não foi possível abrir a build: ' + e.message); return; }
+    curId = null; savedSnap = null; try { localStorage.removeItem(CUR); } catch (e) { }
+    simRes = null; closeModal(); syncHeader(); refresh(); updateState(); goTab('guide'); toast('Build de ' + ((TUT[d.tutor] || {}).n || 'tutor') + ' aberta');
+  }
+  function tutAvatar(k, cls) { var t = TUT[k] || {}; return h('span', { class: 'tav ' + (cls || ''), style: '--lc:' + Y.lineColor(t.cls || 'nov') }, [spriteEl(t.cls || 'nov', 'head', t.sex)]); }
+  function tagChip(tg) { var c = TAGC[String(tg).toLowerCase()]; return h('span', { class: 'ttag', style: c ? '--tc:' + c : '' }, [tg]); }
+  function destCard(d, k) {
+    var c = Y.classById[d.cls] || {}, t = TUT[d.tutor] || { n: d.tutor || 'Tutor' }, old = verCmp(d.v, VERSION) < 0;
+    var card = h('article', { class: 'dcard' + (d.principal ? ' pin' : '') + (d.exemplo ? ' demo' : ''), style: '--lc:' + Y.lineColor(d.cls) + ';animation-delay:' + (k * 40) + 'ms' }, [
+      h('div', { class: 'dstage' }, [h('span', { class: 'rune' }), h('span', { class: 'motes' }), h('span', { class: 'ped' }), spriteEl(d.cls, 'big', d.sex),
+        h('div', { class: 'dbadges' }, [d.principal ? h('span', { class: 'dpin', title: 'Build principal da classe, fixada pelos tutores' }, ['★ Principal']) : null,
+          d.exemplo ? h('span', { class: 'ddemo' }, ['Exemplo']) : null]),
+        h('div', { class: 'dcls' }, [h('b', null, [c.n || d.cls]), h('small', null, [(c.line || '') + (d.lv ? ' · Nv ' + d.lv : '')])])]),
+      h('div', { class: 'dbody' }, [
+        h('h4', null, [d.t]),
+        (d.tags || []).length ? h('div', { class: 'dtags' }, d.tags.map(tagChip)) : null,
+        d.desc ? h('p', { class: 'ddesc' }, [d.desc]) : null,
+        h('button', { class: 'dtutor', title: 'Ver perfil do tutor', on: { click: function () { openTutor(d.tutor); } } }, [tutAvatar(d.tutor), h('span', null, [h('b', null, [t.n]), h('small', { class: 'tver' }, ['✔ Tutor'])])]),
+        h('div', { class: 'dmeta' + (old ? ' old' : '') }, [h('span', null, ['v' + (d.v || '?')]), d.d ? h('span', null, [d.d.split('-').reverse().join('/')]) : null,
+          old ? h('span', { class: 'dold', title: 'O planner e o jogo mudaram desde que esta build foi montada. Confira os valores antes de seguir.' }, ['⚠ Montada na v' + d.v + ': pode estar desatualizada']) : null]),
+        h('div', { class: 'dact' }, [
+          h('button', { class: 'pri', on: { click: function () { openDest(d); } } }, ['Abrir no planner ▸']),
+          h('button', { class: 'ghost', title: 'Copia o link desta build', on: { click: function () { var u = destLink(d); navigator.clipboard && navigator.clipboard.writeText(u).then(function () { toast('Link copiado'); }, function () { prompt('Copie o link:', u); }); } } }, ['Link'])])])]);
+    card.addEventListener('mousemove', function (e) { var r = card.getBoundingClientRect(); card.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100) + '%'); card.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100) + '%'); });
+    return card;
+  }
+  function sortDest(a, b2) { return (b2.principal ? 1 : 0) - (a.principal ? 1 : 0) || (a.exemplo ? 1 : 0) - (b2.exemplo ? 1 : 0) || String(b2.d || '').localeCompare(String(a.d || '')) || a._i - b2._i; }
+  function openTutor(k) {
+    var t = TUT[k] || { n: k }, list = DEST.filter(function (d) { return d.tutor === k; }).sort(sortDest);
+    var grid = h('div', { class: 'dgrid' }); list.forEach(function (d, i) { grid.appendChild(destCard(d, i)); });
+    openModal(h('div', { class: 'tprof', style: '--lc:' + Y.lineColor(t.cls || 'nov') }, [
+      h('div', { class: 'tph' }, [tutAvatar(k, 'lg'), h('div', null, [h('h3', null, [t.n]), h('small', { class: 'tver' }, ['✔ Tutor do YggPlanner · ' + list.length + ' build' + (list.length === 1 ? '' : 's')]),
+        t.desc ? h('p', null, [t.desc]) : null,
+        (t.links || []).length ? h('div', { class: 'tlinks' }, t.links.map(function (l) { return h('a', { href: l[1], target: '_blank', rel: 'noopener', class: 'tlink' }, [l[0] + ' ↗']); })) : null])]),
+      grid, h('div', { class: 'row' }, [h('button', { on: { click: closeModal } }, ['Fechar'])])]), 'wide xl');
+  }
+  function openSend() {
+    var c = Y.classById[b.cls];
+    var fT = h('input', { value: b.name || c.n, placeholder: 'Título da build' }), fN = h('input', { placeholder: 'Seu nome de tutor' });
+    var fTags = h('input', { placeholder: 'Farm, Chefe, Iniciante…' }), fD = h('textarea', { placeholder: 'Resumo curto: para que serve, nível, equipamento-chave…', style: 'height:70px' });
+    var out = h('textarea', { readonly: true, style: 'height:120px;font-family:monospace;font-size:11px' });
+    function gen() {
+      var o = { cls: b.cls, sex: b.sex, t: fT.value.trim() || c.n, tutor: nrm(fN.value).replace(/ /g, '') || 'tutor', tags: fTags.value.split(',').map(function (x) { return x.trim(); }).filter(Boolean),
+        lv: b.lv, v: VERSION, d: new Date().toISOString().slice(0, 10), desc: fD.value.trim(), code: toCode(b) };
+      out.value = JSON.stringify(o, null, 1) + ',' + (fN.value.trim() ? '\n// tutor: ' + fN.value.trim() : '');
+    }
+    [fT, fN, fTags, fD].forEach(function (x) { x.addEventListener('input', gen); }); gen();
+    openModal(h('div', { class: 'dsend' }, [h('h3', null, ['Enviar minha build']),
+      h('div', { class: 'tip' }, ['Preencha e copie o bloco abaixo. Mande para o Rizakh (Discord ou Twitch); depois da revisão a build entra na aba Tutores. O bloco já leva a build atual inteira: atributos, equipamentos, habilidades, guia e anotações.']),
+      h('div', { class: 'dform' }, [h('label', null, ['Título', fT]), h('label', null, ['Seu nome', fN]), h('label', null, ['Rótulos (separados por vírgula)', fTags]), h('label', { class: 'full' }, ['Resumo', fD])]),
+      out, h('div', { class: 'row' }, [h('button', { class: 'pri', on: { click: function () { out.select(); (navigator.clipboard ? navigator.clipboard.writeText(out.value) : Promise.reject()).then(function () { toast('Bloco copiado'); }, function () { document.execCommand('copy'); toast('Bloco copiado'); }); } } }, ['Copiar bloco']),
+        h('button', { on: { click: closeModal } }, ['Fechar'])])]), 'wide');
+  }
+  function tabTut(t) {
+    var cur = Y.classById[b.cls];
+    var all = DEST.slice().sort(sortDest), tags = {};
+    all.forEach(function (d) { (d.tags || []).forEach(function (x) { tags[x] = 1; }); });
+    var head = h('div', { class: 'card thead', style: '--lc:' + Y.lineColor(b.cls) }, [
+      h('div', { class: 'thx' }, [h('h3', null, ['Builds dos tutores']),
+        h('p', { class: 'mut' }, ['Builds montadas e revisadas por tutores do YggIdle. Abra uma no planner para ver atributos, equipamentos, habilidades e a rota de mapas, e ajuste à vontade.'])]),
+      h('button', { class: 'ghost', on: { click: openSend } }, ['✉ Enviar minha build'])]);
+    t.appendChild(head);
+    var q = h('input', { class: 'search', placeholder: 'Buscar por título, classe ou tutor…', value: tutF.q });
+    var bar = h('div', { class: 'tfil' });
+    function chip(lbl, on, fn, col) { return h('button', { class: on ? 'on' : '', style: col ? '--tc:' + col : '', on: { click: fn } }, [lbl]); }
+    function drawBar() {
+      bar.innerHTML = '';
+      bar.appendChild(chip(cur.n, tutF.cls === 'cur', function () { tutF.cls = 'cur'; drawBar(); fill(); }));
+      bar.appendChild(chip('Todas as classes', tutF.cls === 'all', function () { tutF.cls = 'all'; drawBar(); fill(); }));
+      bar.appendChild(h('span', { class: 'sep' }));
+      bar.appendChild(chip('Todos os rótulos', !tutF.tag, function () { tutF.tag = null; drawBar(); fill(); }));
+      Object.keys(tags).sort().forEach(function (x) { bar.appendChild(chip(x, tutF.tag === x, function () { tutF.tag = x; drawBar(); fill(); }, TAGC[x.toLowerCase()])); });
+    }
+    var body = h('div');
+    function fill() {
+      body.innerHTML = ''; var s = nrm(q.value); tutF.q = q.value;
+      var list = all.filter(function (d) {
+        if (tutF.cls === 'cur' && d.cls !== b.cls) return false;
+        if (tutF.tag && (d.tags || []).indexOf(tutF.tag) < 0) return false;
+        if (s) { var c = Y.classById[d.cls] || {}; if (nrm([d.t, c.n, c.line, (TUT[d.tutor] || {}).n, (d.tags || []).join(' ')].join(' ')).indexOf(s) < 0) return false; }
+        return true;
+      });
+      if (!list.length) {
+        body.appendChild(h('div', { class: 'card dempty' }, [h('div', { class: 'deico' }, [spriteEl(b.cls, 'mid')]),
+          h('b', null, [tutF.cls === 'cur' ? 'Ainda não há build de tutor para ' + cur.n + '.' : 'Nenhuma build encontrada.']),
+          h('p', { class: 'mut' }, ['É tutor? Monte a build e use “Enviar minha build” para ela aparecer aqui.']),
+          tutF.cls === 'cur' && all.length ? h('button', { on: { click: function () { tutF.cls = 'all'; drawBar(); fill(); } } }, ['Ver todas as classes (' + all.length + ')']) : null]));
+        return;
+      }
+      if (tutF.cls === 'all') {
+        var by = {}, ord = []; list.forEach(function (d) { if (!by[d.cls]) { by[d.cls] = []; ord.push(d.cls); } by[d.cls].push(d); });
+        var k = 0;
+        ord.forEach(function (cid) {
+          var g = h('div', { class: 'dgrid' }); by[cid].forEach(function (d) { g.appendChild(destCard(d, k++)); });
+          body.appendChild(h('section', { class: 'dsec' }, [h('div', { class: 'clh', style: '--lc:' + Y.lineColor(cid) }, [(Y.classById[cid] || {}).n || cid]), g]));
+        });
+      } else { var g2 = h('div', { class: 'dgrid' }); list.forEach(function (d, i) { g2.appendChild(destCard(d, i)); }); body.appendChild(g2); }
+      var tk = Object.keys(TUT); if (tk.length) body.appendChild(h('div', { class: 'card ttuts' }, [h('h3', null, ['Tutores']), h('div', { class: 'tlist' }, tk.map(function (k2) {
+        var n = DEST.filter(function (d) { return d.tutor === k2; }).length;
+        return h('button', { class: 'dtutor', on: { click: function () { openTutor(k2); } } }, [tutAvatar(k2), h('span', null, [h('b', null, [TUT[k2].n]), h('small', null, [n + ' build' + (n === 1 ? '' : 's')])])]);
+      }))]));
+    }
+    q.addEventListener('input', fill);
+    t.appendChild(h('div', { class: 'tbar' }, [q, bar])); t.appendChild(body); drawBar(); fill();
+  }
+  function tutCount(cls) { return DEST.filter(function (d) { return d.cls === cls; }).length; }
 
   // ---------- início ----------
   function init() {
