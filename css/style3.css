@@ -503,3 +503,10 @@ img.mmapbig{width:100%;border-radius:10px;border:1px solid var(--line)}
 @media(max-width:620px){.eqxgrid{grid-template-columns:1fr}}
 .clitag{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:999px;font-size:10px;font-weight:600;letter-spacing:.03em;white-space:nowrap;vertical-align:middle;color:#e5b07a;background:rgba(229,139,122,.12);border:1px solid rgba(229,139,122,.35)}
 .clitag.cf{color:#9fd8a8;background:rgba(120,200,140,.1);border-color:rgba(120,200,140,.35)}
+/* joias do Caos */
+.cjgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin-top:8px}
+.cjbox{border:1px solid var(--line,#333);border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:6px}
+.cjbox.off{opacity:.55}
+.cjbox select{width:100%}
+.cjbox .line{display:flex;gap:6px;align-items:center}
+.cjbox .line select{flex:1;min-width:0}

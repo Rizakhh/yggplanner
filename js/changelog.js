@@ -4,6 +4,21 @@
 window.YGG = window.YGG || {};
 YGG.changelog = [
   {
+    v: '0.2.4', d: '2026-11-24', t: 'Joias do Caos e itens próprios do YggIdle',
+    g: [
+      ['Árvore do Caos', [
+        'Quadro novo “Joias do Caos” na aba Árvore do Caos: 2 encaixes para Joias de Yggdrasil (Guardião: HP e SP +15%; Sombra: corpo a corpo +15%; Instinto: à distância +15%; Mágica: dano mágico +15%), que podem ser iguais.',
+        'Cada Joia de Yggdrasil tem raridade e até 3 linhas de bônus do Lapidário, com a mesma lista e os mesmos valores da Joia do Destino. Cada encaixe só abre depois de comprar um Encaixe de Joia na árvore.',
+        'Joia Ying Yang no Encaixe Ying Yang (depois da Fúria do Legado): +10 nos 6 traços. O efeito escondido, revelado no Abismo, não entra no cálculo.',
+        'RES, MRES, Ignorar RES, P.ATQ, S.ATQM e traços das joias só contam no Sombrio, no Inferno e no Abismo, como no jogo.'
+      ]],
+      ['Itens', [
+        'Anel do Mercador (acessório alugado, Desconto e Superfaturamento nível 10) incluído; ficava de fora porque a descrição não traz o tipo do item.',
+        'Os demais itens próprios do YggIdle que não estão no planner não são equipamento nem dão bônus de combate: caixas, ovos, runas, chaves, gemas de cópia de carta e itens de mochila da Rifa (Lágrima de Mímir, Brasa de Surtur e afins).'
+      ]]
+    ]
+  },
+  {
     v: '0.2.3', d: '2026-11-24', t: 'Bônus aleatórios, Sombrio/Visual e itens do cliente',
     g: [
       ['Bônus aleatórios', [

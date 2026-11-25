@@ -128,7 +128,7 @@
     o.opt = Object.assign({}, d.opt, o.opt); o.buffs = o.buffs || {}; o.skills = o.skills || {}; o.eq = o.eq || {}; o.extra = o.extra || [];
     o.sim = Object.assign({ mon: null, n: 1, farm: false, maxT: 120, mobDelay: 1.5, mobEle: 'Neutro', healPs: 0, spRegen: 1, rot: [], runs: 100 }, o.sim || {});
     o.tree = o.tree || {}; o.guides = o.guides || {}; o.sex = o.sex === 'f' ? 'f' : 'm';
-    o.caos = Object.assign({ n: {}, side: 'yang', fury: 0 }, o.caos || {}); o.caos.n = o.caos.n || {};
+    o.caos = Object.assign({ n: {}, side: 'yang', fury: 0 }, o.caos || {}); o.caos.n = o.caos.n || {}; o.caos.jw = o.caos.jw || [];
     o.cons = o.cons || []; o.xsk = o.xsk || {}; if (!o.opt.zone2) o.opt.zone2 = o.opt.traits ? 'sombrio' : 'normal';
     o.opt.traits = o.opt.zone2 === 'sombrio' || o.opt.zone2 === 'inferno'; o.opt.zone = o.opt.traits;
     if (UPG[o.cls]) o.cls = UPG[o.cls];
@@ -1813,6 +1813,74 @@
     ascTiersFor(bb).forEach(function (t) { cApply(t.e, true, z, B, add); (t.m || []).forEach(function (m) { notes.push({ src: 'Ascensão ' + ROMAN[t.slot], t: mecText(m), on: true }); }); });
     B._caosPts = (B._caosPts || 0) + pts;
   });
+  // ----- joias da Árvore do Caos (Joias de Yggdrasil e Joia Ying Yang) -----
+  var CJW = {
+    1280668: { n: 'Joia Guardião de Yggdrasil', s: { hpPct: 15, spPct: 15 }, t: 'HP e SP máximos +15%' },
+    1280669: { n: 'Joia Sombra de Yggdrasil', s: { dmgMelee: 15 }, t: 'Dano físico corpo a corpo +15%' },
+    1280670: { n: 'Joia Instinto de Yggdrasil', s: { dmgRanged: 15 }, t: 'Dano físico à distância +15%' },
+    1280671: { n: 'Joia Mágica de Yggdrasil', s: { dmgMagic: 15 }, t: 'Dano mágico +15%' }
+  };
+  var CJYY = { id: 1280677, n: 'Joia Ying Yang', s: { pow: 10, sta: 10, wis: 10, spl: 10, con: 10, crt: 10 }, t: '+10 nos 6 traços' };
+  var CJ_ONLY = { res: 1, mres: 1, ignResCaos: 1, patk: 1, smatk: 1, pow: 1, sta: 1, wis: 1, spl: 1, con: 1, crt: 1 };
+  function cjPool() { var d = (Y.items || []).filter(function (x) { return x.id === 1280507; })[0]; return (d && d.jl) || []; }
+  function cjSlots(bb) {
+    var nj = 0, yy = false;
+    Object.keys(bb.caos.n).forEach(function (id) { var n = CN[id]; if (!n || n.t !== 'joia') return; if (n.yy) yy = true; else nj++; });
+    return { j: Math.min(2, nj), yy: yy };
+  }
+  function cjAdd(bb, s, z, B, add) { Object.keys(s).forEach(function (k) { if (CJ_ONLY[k] && !z.caos) return; add(B, k, s[k]); }); }
+  E.hooks.push(function (bb, B, notes, add) {
+    if (!bb.caos) return;
+    var z = D.zoneOf(bb), sl = cjSlots(bb), pool = cjPool();
+    (bb.caos.jw || []).slice(0, sl.j).forEach(function (j) {
+      var J = j && CJW[j.id]; if (!J) return;
+      cjAdd(bb, J.s, z, B, add);
+      var r = Math.max(0, Math.min(3, j.r || 0));
+      (j.l || []).slice(0, r).forEach(function (ix) { var L = pool[ix]; if (!L) return; var o = {}; L.k.forEach(function (k) { o[k] = L.v[r - 1]; }); cjAdd(bb, o, z, B, add); });
+    });
+    if (sl.yy && bb.caos.yy) cjAdd(bb, CJYY.s, z, B, add);
+  });
+  function cjCard() {
+    var sl = cjSlots(b), pool = cjPool(), jw = b.caos.jw;
+    var c = h('div', { class: 'card' }, [h('div', { class: 'ch' }, [h('h3', null, ['Joias do Caos']), h('span', { class: 'grow' }), h('small', { class: 'mut' }, ['itens próprios do YggIdle'])])]);
+    c.appendChild(h('div', { class: 'tip' }, ['Joias de Yggdrasil: até 2 por personagem (podem ser iguais), uma em cada Encaixe de Joia comprado. A raridade e as linhas vêm do Lapidário, como na Joia do Destino: cada raridade libera 1 linha (até 3, Épica no topo). RES, MRES, Ignorar RES, P.ATQ, S.ATQM e traços só contam no Sombrio, no Inferno e no Abismo; o resto vale em todo o jogo. Nada disso vale em PvP, GvG nem Battleground.']));
+    var grid = h('div', { class: 'cjgrid' });
+    for (var i = 0; i < 2; i++) (function (i) {
+      var on = i < sl.j, j = jw[i] || { id: 0, r: 0, l: [] };
+      var box = h('div', { class: 'cjbox' + (on ? '' : ' off') }, [h('b', null, ['Encaixe ' + (i + 1)])]);
+      var sel = h('select', { disabled: !on, on: { change: function (ev) { var v = +ev.target.value; if (!v) jw[i] = null; else jw[i] = { id: v, r: (jw[i] && jw[i].r) || 0, l: (jw[i] && jw[i].l) || [] }; refresh(true); } } });
+      sel.appendChild(h('option', { value: 0 }, [on ? '— vazio —' : 'compre um Encaixe de Joia na árvore']));
+      Object.keys(CJW).forEach(function (id) { sel.appendChild(h('option', { value: id, selected: +id === j.id }, [CJW[id].n])); });
+      box.appendChild(sel);
+      if (on && CJW[j.id]) {
+        box.appendChild(h('div', { class: 'mut' }, ['Efeito base: ' + CJW[j.id].t]));
+        var rs = h('select', { on: { change: function (ev) { j.r = +ev.target.value; j.l = (j.l || []).slice(0, j.r); refresh(true); } } });
+        JLR.forEach(function (nm, r) { rs.appendChild(h('option', { value: r, selected: r === (j.r || 0) }, [nm])); });
+        box.appendChild(h('label', { class: 'inl' }, ['Raridade ', rs]));
+        j.l = j.l || [];
+        for (var q = 0; q < 3; q++) (function (q) {
+          var ok = q < (j.r || 0);
+          var ls = h('select', { disabled: !ok, on: { change: function (ev) { var v = ev.target.value; if (v === '') j.l.splice(q, 1); else j.l[q] = +v; refresh(true); } } });
+          ls.appendChild(h('option', { value: '' }, [ok ? '— linha vazia —' : 'liberada na raridade ' + JLR[q + 1]]));
+          var grp = {};
+          pool.forEach(function (L, ix) {
+            var u = j.l.indexOf(ix); if (u >= 0 && u !== q) return;
+            if (!grp[L.g]) { grp[L.g] = h('optgroup', { label: L.g }); ls.appendChild(grp[L.g]); }
+            grp[L.g].appendChild(h('option', { value: ix, selected: j.l[q] === ix }, [L.n + ' +' + L.v[Math.max(0, (j.r || 1) - 1)]]));
+          });
+          box.appendChild(h('div', { class: 'line' }, [h('span', { class: 'mut' }, ['Linha ' + (q + 1)]), ls]));
+        })(q);
+      }
+      grid.appendChild(box);
+    })(i);
+    var yb = h('div', { class: 'cjbox' + (sl.yy ? '' : ' off') }, [h('b', null, ['Encaixe Ying Yang'])]);
+    var yc = h('input', { type: 'checkbox', checked: !!b.caos.yy, disabled: !sl.yy, on: { change: function (ev) { b.caos.yy = ev.target.checked ? 1 : 0; refresh(true); } } });
+    yb.appendChild(h('label', { class: 'inl' }, [yc, CJYY.n]));
+    yb.appendChild(h('div', { class: 'mut' }, [sl.yy ? 'Efeito base: ' + CJYY.t + ' (só no Sombrio, no Inferno e no Abismo). O efeito escondido, revelado no Abismo, não entra no cálculo.' : 'Compre um Encaixe Ying Yang (depois da Fúria do Legado) para usar. Só 1 por personagem, fora do limite de 2 joias.']));
+    grid.appendChild(yb);
+    c.appendChild(grid);
+    return c;
+  }
   function cAdj(id) { return (CADJ[id] || []).some(cHas); }
   function cHas(id) { return !!b.caos.n[id]; }
   function cExcl(n) { if (!n.x1) return null; var blk = null; Object.keys(b.caos.n).forEach(function (id) { var m = CN[id]; if (m && m.x1 === n.x1 && m.x2 !== n.x2) blk = m; }); return blk; }
@@ -1939,6 +2007,7 @@
     cA.appendChild(h('div', { class: 'tip' }, ['Cada nó de Ascensão custa 10.000.000 de Caos e não conta como ponto. A Marca exige 30 nós comuns.']));
     cols.appendChild(cA);
     t.appendChild(cols);
+    t.appendChild(cjCard());
   }
   function cTip(n) {
     var w = cWhy(n), got = cHas(n.i);
