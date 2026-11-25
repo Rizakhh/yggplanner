@@ -4,6 +4,20 @@
 window.YGG = window.YGG || {};
 YGG.changelog = [
   {
+    v: '0.2.9-hf1', d: '2026-11-25', t: 'Condições escritas por extenso e acessórios de um lado só',
+    g: [
+      ['Equipamentos', [
+        'No editor do item, os efeitos marcados como “(condicional)” agora mostram a condição como no jogo, por exemplo: “Refino +7 ou mais”, “A cada 18 de FOR base”, “Conjunto com Botas de Diabolus”, “Ao realizar ataques físicos”, “A cada nível de [Rapidez com Duas Mãos]” e “Só no Inferno”.',
+        'Acessórios que o jogo só deixa usar de um lado agora aparecem apenas nesse lado. Exemplos: Máscara de Oni (esquerdo), Luvas de atributo (direito), Brincos Sombrios (direito) e Colares Sombrios (esquerdo). São 294 acessórios (130 comuns e 164 sombrios), com o lado lido do cliente do jogo.',
+        'O editor do item mostra em qual lado ele vai, por exemplo “só no Acessório (E)”.',
+        'Builds salvas com o acessório do lado errado: o item passa para o lado certo se ele estiver livre. Se não estiver, o item sai da build. Enquanto estiver do lado errado, ele não conta no cálculo.'
+      ]],
+      ['Cartas', [
+        'Cartas de acessório de um lado só agora encaixam apenas nesse lado, tanto como carta quanto como gema. Exemplos: Búfalo Bandido e Raydric Maldito (esquerdo), Búfalo Pistoleiro e Arqueiro Maldito (direito). São 15 cartas, e a Geodoliant continua só no Acessório Direito, como na atualização de 25/11.'
+      ]]
+    ]
+  },
+  {
     v: '0.2.9', d: '2026-11-25', t: 'Efeitos atuais ao passar o mouse no equipamento',
     g: [
       ['Equipamentos', [

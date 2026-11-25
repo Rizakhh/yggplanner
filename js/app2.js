@@ -139,6 +139,8 @@
     // descarta cartas/gemas fora do slot de origem (builds antigas ou importadas)
     Object.keys(o.eq).forEach(function (sl) {
       var e = o.eq[sl]; if (!e) return;
+      var it0 = Y.itemById[e.id];
+      if (it0 && !E.itemFits(sl, it0)) { delete o.eq[sl]; if (!o.eq[it0.only]) { o.eq[it0.only] = e; sl = it0.only; } else return; } // lado errado: passa para o lado certo se estiver livre
       if (e.cards) e.cards = e.cards.map(function (cid) { return cid && E.cardFits(sl, cid) ? cid : 0; });
       if (e.gem) e.gem = e.gem.map(function (cid, gi) { return cid && E.cardFits(sl, cid, gi) ? cid : 0; });
     });
@@ -1274,7 +1276,7 @@
     return Y.items.filter(function (it) {
       if (sl === 'weapon') return it.c === 'w';
       if (sl === 'ammo') return it.c === 'm';
-      return it.c === 'a' && it.s === ty;
+      return it.c === 'a' && it.s === ty && E.itemFits(sl, it);
     });
   }
   function cardsFor(sl, gem, gslot) {
@@ -1333,6 +1335,31 @@
     })(i);
   }
   function itemLabel(id) { var it = Y.itemById[id]; return it ? it.n : '—'; }
+  // condição de um efeito de item em texto, no estilo da descrição do jogo (ex.: “Refino +7 ou mais”, “A cada 18 de FOR base”)
+  var STATN = { str: 'FOR', agi: 'AGI', vit: 'VIT', int: 'INT', dex: 'DES', luk: 'SOR' };
+  var ZONEN = { normal: 'Normal', sombrio: 'Sombrio', inferno: 'Inferno', abismo: 'Abismo' };
+  function condText(c) {
+    if (!c) return '';
+    var out = [];
+    if (c.proc) out.push(c.proc);
+    if (c.set) out.push('Conjunto com ' + c.set.map(function (g) { return g.join(' ou '); }).join(' + '));
+    if (c.sum) out.push((c.sum === 'conjunto' ? 'Refinos do conjunto somando' : 'Refinos ' + (/^(da|do|de|das|dos) /.test(c.sum) ? '' : 'de ') + c.sum.replace(/\s*somando$/, '') + ' somando') + ' +' + c.r + ' ou mais');
+    else if (c.rx) out.push(/somando$/.test(c.rx) ? 'Refinos de ' + c.rx + ' +' + c.r + ' ou mais' : 'Refino ' + (/^(da|do|de) /.test(c.rx) ? '' : 'de ') + c.rx + ' +' + c.r + ' ou mais');
+    else if (c.every) out.push((c.every === 1 ? 'A cada refino' : 'A cada ' + c.every + ' refinos') + (c.cap ? ' (até o +' + c.cap + ')' : ''));
+    else if (c.r != null) out.push('Refino +' + c.r + ' ou mais');
+    if (c.perStat) out.push((c.n === 1 ? 'A cada ponto' : 'A cada ' + c.n) + ' de ' + (STATN[c.perStat] || c.perStat.toUpperCase()) + ' base');
+    if (c.perBase) out.push('A cada ' + c.perBase + ' níveis de base');
+    if (c.perSkill) out.push((c.n === 1 ? 'A cada nível de ' : 'A cada ' + c.n + ' níveis de ') + '[' + c.perSkill + ']');
+    if (c.min) out.push(c.min === 'base' ? 'Nível de base ' + c.v + ' ou mais' : 'Com ' + c.min + ' ' + c.v + ' ou mais');
+    if (c.zone2) out.push('Só no ' + c.zone2.split('|').map(function (z) { return ZONEN[z] || z; }).join(' ou no '));
+    else if (c.zone) out.push(typeof c.zone === 'string' ? c.zone : 'No Sombrio, no Inferno e no Abismo');
+    if (c.job) out.push('Para ' + c.job);
+    return out.join(' · ');
+  }
+  function fxLine(f, txt) {
+    var ct = condText(f.c);
+    return h('div', { class: 'fx' }, ct ? [h('span', { class: 'fxc' }, [ct.replace(/[:.]\s*$/, '') + ':']), ' ' + txt] : [txt]);
+  }
   function slotEditor(sl) {
     var c = h('div', { class: 'card' }, [h('h3', null, ['Editar: ' + E.SLOT_NAMES[sl]])]);
     if (!slotAllowed(sl)) { c.appendChild(h('div', { class: 'mut' }, ['Escudo indisponível com arma de duas mãos.'])); return c; }
@@ -1345,10 +1372,11 @@
     // descrição
     var info = [];
     if (it.a) info.push('ATQ ' + it.a); if (it.ma) info.push('ATQM ' + it.ma); if (it.d) info.push('DEF ' + it.d); if (it.md) info.push('MDEF ' + it.md); if (it.wl) info.push('Arma nv ' + it.wl); if (it.sl) info.push(it.sl + ' slot(s)'); if (it.wt) info.push('Peso ' + it.wt);
+    if (it.only) info.push('só no ' + E.SLOT_NAMES[it.only].replace(/^Sombrio: a/, 'Sombrio: A'));
     c.appendChild(h('div', { class: 'tip' }, [info.join(' · ')]));
     (it.fx || []).forEach(function (f) {
       var txt = f.t || Object.keys(f.s || {}).map(function (k) { return lblKey(k) + ' ' + (f.s[k] > 0 ? '+' : '') + f.s[k]; }).join(', ');
-      c.appendChild(h('div', { class: 'fx' }, [(f.c ? '(condicional) ' : '') + txt]));
+      c.appendChild(fxLine(f, txt));
     });
     // sombrio / visual: só refino (sombrio) e linhas próprias do item
     if (E.EXTRA_SLOT[sl]) {
@@ -1414,7 +1442,7 @@
       if (bx) (bx.fx || []).forEach(function (f) {
         var ks = Object.keys(f.s || {}), ae = ks.filter(function (k) { return /^dmgAtkEle:/.test(k); });
         var txt = f.t || (ae.length >= 10 ? ['Dano ' + (/Magic$/.test(ae[0]) ? 'mágico' : 'físico') + ' de todas as propriedades +' + f.s[ae[0]] + '%'] : ks.map(function (k) { return lblKey(k) + ' ' + (f.s[k] > 0 ? '+' : '') + f.s[k]; })).join(', ');
-        c.appendChild(h('div', { class: 'fx' }, [(f.c && f.c.set ? '(conjunto com ' + f.c.set.map(function (x) { return x[0]; }).join(' + ') + ') ' : f.c ? '(condicional) ' : '') + txt]));
+        c.appendChild(fxLine(f, txt));
       });
     }
     return c;

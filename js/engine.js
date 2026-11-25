@@ -185,6 +185,8 @@
     if (!GEM_SLOTS[sl]) return false;
     return gi === 0 ? !c.k : !!c.k;
   }
+  // item de lado único (ex.: Máscara de Oni só no Acessório Esquerdo): it.only é o slot permitido
+  function itemFits(sl, it) { it = typeof it === 'object' ? it : Y.itemById[it]; return !!it && (!it.only || it.only === sl); }
   function eqCards(sl, e) { return (e.cards || []).filter(function (cid) { return cardFits(sl, cid); }); }
   function eqGems(sl, e) { return (e.gem || []).filter(function (cid, gi) { return cardFits(sl, cid, gi); }); }
   function enchOf(it, e) { return canEnch(it) ? (e.ench || []).filter(function (cid) { return cid && Y.itemById[cid] && Y.itemById[cid].s === 'ench'; }) : []; }
@@ -193,7 +195,7 @@
     var eqs = [];
     SLOTS.forEach(function (sl) {
       var e = b.eq[sl]; if (!e) return;
-      var it = Y.itemById[e.id]; if (!it) return;
+      var it = Y.itemById[e.id]; if (!it || !itemFits(sl, it)) return;
       eqs.push({ sl: sl, e: e, it: it });
       names[norm(it.n)] = 1;
       eqCards(sl, e).forEach(function (cid) { names[norm(Y.itemById[cid].n)] = 1; });
@@ -346,7 +348,7 @@
     // dano: modificadores
     R.mod = B;
     // peso
-    var wt = 0; Object.keys(b.eq).forEach(function (sl) { var e = b.eq[sl]; if (e && Y.itemById[e.id]) wt += (Y.itemById[e.id].wt || 0); });
+    var wt = 0; Object.keys(b.eq).forEach(function (sl) { var e = b.eq[sl]; if (e && Y.itemById[e.id] && itemFits(sl, e.id)) wt += (Y.itemById[e.id].wt || 0); });
     R.weight = wt; R.maxWeight = (job.maxWeight || 20000) / 10 + R.str * 30;
     // pontos
     R.ptsTotal = statPointsTotal(lv, b.cls) + (b.bonusPts || 0);
@@ -360,6 +362,6 @@
     ST: ST, TR: TR, SLOTS: SLOTS, SLOT_NAMES: SLOT_NAMES, SLOT_TYPE: SLOT_TYPE, CARD_TYPE: CARD_TYPE, GEM_SLOTS: GEM_SLOTS, SIZEFIX: SIZEFIX, RANGED: RANGED,
     newBuild: newBuild, newEq: newEq, compute: compute, gather: gather, statPointsTotal: statPointsTotal, isHigh: isHigh, EXPANDED: EXPANDED, statCost: statCost, statSpent: statSpent,
     SHADOW: SHADOW, VISUAL: VISUAL, EXTRA_SLOT: EXTRA_SLOT, jlRarity: jlRarity,
-    lineRange: lineRange, resolveKey: resolveKey, BT: BT, norm: norm, hooks: HOOKS, condMult: condMult, canEnch: canEnch, cardFits: cardFits
+    lineRange: lineRange, resolveKey: resolveKey, BT: BT, norm: norm, hooks: HOOKS, condMult: condMult, canEnch: canEnch, cardFits: cardFits, itemFits: itemFits
   };
 })();
