@@ -4,6 +4,17 @@
 window.YGG = window.YGG || {};
 YGG.changelog = [
   {
+    v: '0.2.11-hf1', d: '2026-11-25', t: 'Filtro de classe dos equipamentos',
+    g: [
+      ['Equipamentos', [
+        'O filtro “Somente usáveis pela classe” lia mal a lista de classes de muitos itens e os escondia. Agora entende classes separadas por “/” (“Bardo / Dançarina”), “e evoluções”, nomes no plural (“Espadachins”, “Arqueiros”), “Apenas…” e “Todas as classes, exceto…”. Cerca de 640 itens voltaram a aparecer para as classes certas.',
+        'Por isso a Faísca Pigritia (que concede Ressonância) não aparecia para Bardo/Dançarina e a habilidade nunca chegava à aba Extra. O mesmo acontecia com Tentáculo Afiado, Cruz Impiedosa, Lâmina dos Céus, Lâmina do Infinito, Lâmina Sagrada, Certeira Ilusional, Katar do Algoz, os Manuais (Ninja, Justiceiro, Taekwon), as Vestes de Ghostring/Angeling e as armas Ancestral/Primordial, entre outros.',
+        'Itens só de “Aprendiz” não aparecem mais para todas as classes, e “Todas as classes, exceto Aprendiz” deixou de valer para o Aprendiz.',
+        'Itens restritos a classes 3 e 4 (Arcebispo, Feiticeiro, Guardião Real...) seguem fora do filtro, porque o planner vai até as transcendentais.'
+      ]]
+    ]
+  },
+  {
     v: '0.2.11', d: '2026-11-25', t: 'Habilidades concedidas por equipamentos',
     g: [
       ['Habilidades', [

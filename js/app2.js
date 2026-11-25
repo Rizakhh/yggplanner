@@ -1133,9 +1133,36 @@
   function usable(it) {
     var cl = Y.classById[b.cls];
     if (it.lv && it.lv > b.lv) return false;
+    return jobOk(it, cl);
+  }
+  // classes que usam o item. Os textos vêm em vários formatos: "Bardo / Dançarina", "Espadachins e evoluções",
+  // "Apenas Mecânicos", "Todas as classes, exceto Aprendiz"... Nomes de classes que o planner não tem (3ª e 4ª) não liberam nada.
+  var JV = {}, JALIAS = { templario: 'Cruzado', odalisca: 'Dançarina', novico: 'Acólito', gatuno: 'Ladrão', mercenario: 'Assassino', arruaceiro: 'Vigarista', superaprendiz: 'Super Aprendiz', bruxo: 'Feiticeiro', justiceiro: 'Pistoleiro' };
+  Y.classes.forEach(function (c) { c.items.forEach(function (x) { JV[nrm(x)] = x; }); });
+  function jSing(t) { return t.split(' ').map(function (w) { return /ns$/.test(w) ? w.slice(0, -2) + 'm' : /[rz]es$/.test(w) ? w.slice(0, -2) : /s$/.test(w) ? w.slice(0, -1) : w; }).join(' '); }
+  function jName(t) {
+    t = nrm(t).replace(/^(apenas|somente) /, '').replace(/ e (suas |as respectivas )?evolucoes$/, '').replace(/ evolucoes$/, '').trim();
+    if (t === 'feiticeiros') return null; // no plural é a 3ª classe (Sorcerer), não o Bruxo
+    var c = [t, jSing(t)];
+    for (var i = 0; i < c.length; i++) { if (JV[c[i]]) return JV[c[i]]; if (JALIAS[c[i]]) return JALIAS[c[i]]; }
+    return null;
+  }
+  // { n: nome, evo: "e evoluções" no texto }
+  function jTokens(s) {
+    var out = [], evo = /evolu/i.test(s);
+    String(s).split(/\s*[,\/]\s*/).forEach(function (p) { p.split(/\s+e\s+(?!(?:suas |as respectivas )?evolu)/i).forEach(function (q) { var n = jName(q); if (n) out.push({ n: n, evo: evo }); }); });
+    return out;
+  }
+  function jobOk(it, cl) {
     if (!it.j || !it.j.length) return true;
-    var js = Array.isArray(it.j) ? it.j : String(it.j).split(/\s*,\s*/);
-    return js.some(function (j) { return cl.items.some(function (x) { return x.toLowerCase() === String(j).toLowerCase(); }) || /todas|all/i.test(j); });
+    var par = cl.parent && Y.classById[cl.parent], own = cl.items.filter(function (x) { return !par || par.items.indexOf(x) < 0; });
+    return (Array.isArray(it.j) ? it.j : [it.j]).some(function (j) {
+      j = String(j).trim();
+      var ex = j.match(/^(?:todas(?: as classes)?|all)\s*(?:,?\s*exceto\s*(.*))?$/i);
+      if (ex) return !ex[1] || !jTokens(ex[1]).some(function (t) { return own.indexOf(t.n) >= 0; });
+      // toda classe descende do Aprendiz: "Aprendiz" sozinho é só o Aprendiz
+      return jTokens(j).some(function (t) { return t.n === 'Aprendiz' && !t.evo ? cl.id === 'nov' : cl.items.indexOf(t.n) >= 0; });
+    });
   }
   // o nome de muitos itens já traz o espaço de carta ("Espada [3]"): não repetir
   function hasSlTxt(it) { return /\[\d+\]\s*$/.test(it.n || ''); }
