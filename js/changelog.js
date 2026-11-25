@@ -4,6 +4,20 @@
 window.YGG = window.YGG || {};
 YGG.changelog = [
   {
+    v: '0.2.11-hf3', d: '2026-11-25', t: 'Ignorar defesa e dano por alvo',
+    g: [
+      ['Equipamentos', [
+        'Cerca de 500 efeitos “Ignora X% da DEF/DEFM” estavam gravados num formato que a simulação não lia. Agora seguem o texto do item: DEF ou DEFM, monstros normais, chefes, todas as raças ou só uma raça (ex.: Matadora de Dragão ignora a DEF da raça Dragão; Carta Arquimaga Kathryne ignora a DEFM de normais; Cajado Perfurador ignora DEFM).',
+        'Outros 190 efeitos “Ignora +X% ...” que apareciam só como texto passaram a contar.',
+        'Cerca de 660 efeitos de dano contra alvo escritos de outro jeito (“oponentes de propriedade Água”, “os tamanhos Pequeno e Médio”, “a raça Demônio”, “todas as raças de monstros”, “dano mágico de propriedade Neutro e Sagrado”...) agora contam como dano contra raça, propriedade, tamanho, normais/chefes ou propriedade do ataque.',
+        'Dano contra personagens (JxJ) e contra grupos de monstros pelo nome (Goblins, Orcs, Golems...) continua só no texto.'
+      ]],
+      ['Status', [
+        'A seção “Ignora defesa” mostra também os bônus por raça.'
+      ]]
+    ]
+  },
+  {
     v: '0.2.11-hf2', d: '2026-11-25', t: 'Habilidades concedidas na simulação',
     g: [
       ['Simulação', [

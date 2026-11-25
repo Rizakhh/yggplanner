@@ -109,8 +109,8 @@
     if (p[0] === 'resEle') return 'Resist. ' + p[1] + ' %';
     if (p[0] === 'resRace') return 'Resist. ' + p[1] + ' %';
     if (p[0] === 'resSize') return 'Resist. tam. ' + p[1] + ' %';
-    if (p[0] === 'ignDef') return 'Ignora DEF (' + p[1] + ') %';
-    if (p[0] === 'ignMdef') return 'Ignora MDEF (' + p[1] + ') %';
+    if (p[0] === 'ignDef') return 'Ignora DEF ' + (p[1] === 'race' ? 'da raça ' + p[2] : '(' + p[1] + ')') + ' %';
+    if (p[0] === 'ignMdef') return 'Ignora MDEF ' + (p[1] === 'race' ? 'da raça ' + p[2] : '(' + p[1] + ')') + ' %';
     if (p[0] === 'skill') return 'Habilidade ' + p[1];
     return k;
   }
@@ -526,7 +526,11 @@
     var ign = [srow('Ignora DEF', cap(iD)), srow('Ignora MDEF', cap(iM)),
       srow('Ignora DEF de Normais', cap(iD + (B['ignDef:Normal'] || 0))), srow('Ignora DEF de Chefes', cap(iD + (B['ignDef:Boss'] || 0))),
       srow('Ignora DEF Mágica de Normais', cap(iM + (B['ignMdef:Normal'] || 0))), srow('Ignora DEF Mágica de Chefes', cap(iM + (B['ignMdef:Boss'] || 0))),
-      srow('Penetração de Redução', fmt(D.penetration ? D.penetration(R) : 0, 1) + '%', '', 'Árvore do Caos (até 25%) + Ascensão + joias; máximo 50%')];
+      // por raça (itens como Matadora de Dragão, Rugido Sangrento)
+    ].concat(Object.keys(B).filter(function (k) { return /^ign(M)?def:race:/i.test(k) && B[k]; }).sort().map(function (k) {
+      var q = k.split(':'); return srow('Ignora ' + (q[0] === 'ignDef' ? 'DEF' : 'DEF Mágica') + ' da raça ' + q[2], cap((q[0] === 'ignDef' ? iD : iM) + B[k]));
+    })).concat([
+      srow('Penetração de Redução', fmt(D.penetration ? D.penetration(R) : 0, 1) + '%', '', 'Árvore do Caos (até 25%) + Ascensão + joias; máximo 50%')]);
     // bônus agrupados por seção
     var S = { dmg: [], def: [], exp: [], atr: [], out: [] }, seen = {};
     Object.keys(B).forEach(function (k) {

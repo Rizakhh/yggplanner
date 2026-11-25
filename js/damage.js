@@ -103,7 +103,7 @@
     var perHitRatio = s && s.hl ? ratio : ratio / hits;
     var res = { hits: hits, isMagic: isMagic, atkEle: atkEle, eleMult: eleMult, ratio: ratio };
     if (isMagic) {
-      var mdefEff = Math.max(0, mon.mdef * (1 - Math.min(100, (B['ignMdef:' + (isBoss ? 'Boss' : 'Normal')] || 0) + (B['ignMdef:all'] || 0)) / 100));
+      var mdefEff = Math.max(0, mon.mdef * (1 - Math.min(100, (B['ignMdef:' + (isBoss ? 'Boss' : 'Normal')] || 0) + (B['ignMdef:all'] || 0) + (B['ignMdef:race:' + mon.race] || 0)) / 100));
       var matk = R.matk;
       var cf = D.cardfix(R, 'Magic', mon, true, isBoss, atkEle);
       var dmg = matk * perHitRatio / 100 * eleMult * cf;
@@ -115,7 +115,7 @@
     } else {
       var P = D.physPer(R, b, mon);
       var ranged = s && s.id !== 'basic' ? s.r === 'r' : R.ranged;
-      var def = Math.max(0, mon.def * (1 - Math.min(100, (B['ignDef:' + (isBoss ? 'Boss' : 'Normal')] || 0) + (B['ignDef:all'] || 0)) / 100));
+      var def = Math.max(0, mon.def * (1 - Math.min(100, (B['ignDef:' + (isBoss ? 'Boss' : 'Normal')] || 0) + (B['ignDef:all'] || 0) + (B['ignDef:race:' + mon.race] || 0)) / 100));
       var cf2 = D.cardfix(R, 'Phys', mon, ranged, isBoss, atkEle);
       var stAtk = R.batk * 2;
       function calc(wpn, crit) {
