@@ -98,10 +98,10 @@
     if (STN[k]) return STN[k]; if (TRN[k]) return TRN[k];
     var p = k.split(':');
     var tp = { Phys: 'físico', Magic: 'mágico', Both: 'total' };
-    if (p[0] === 'dmgRace') return 'Dano ' + (tp[p[2]] || '') + ' vs ' + p[1] + ' %';
+    if (p[0] === 'dmgRace') return 'Dano ' + (tp[p[2]] || '') + ' vs ' + (p[1] === '*' ? 'todas as raças' : p[1]) + ' %';
     if (p[0] === 'dmgEle') return 'Dano ' + (tp[p[2]] || '') + ' vs ' + p[1] + ' %';
     if (p[0] === 'dmgAtkEle') return 'Dano ' + p[1] + ' ' + (tp[p[2]] || '') + ' %';
-    if (p[0] === 'dmgSize') return 'Dano ' + (tp[p[2]] || '') + ' vs tam. ' + p[1] + ' %';
+    if (p[0] === 'dmgSize') return 'Dano ' + (tp[p[2]] || '') + ' vs ' + (p[1] === 'all' ? 'todos os tamanhos' : 'tam. ' + p[1]) + ' %';
     if (p[0] === 'dmgBoss') return 'Dano ' + (tp[p[1]] || '') + ' vs Chefe %';
     if (p[0] === 'dmgNormal') return 'Dano ' + (tp[p[1]] || '') + ' vs Normal %';
     if (p[0] === 'resEle') return 'Resist. ' + p[1] + ' %';
@@ -134,6 +134,12 @@
     if (UPG[o.cls]) o.cls = UPG[o.cls];
     if (!Y.classById[o.cls]) o.cls = 'lor';
     o.lv = Math.max(1, Math.min(175, +o.lv || 1));
+    // descarta cartas/gemas fora do slot de origem (builds antigas ou importadas)
+    Object.keys(o.eq).forEach(function (sl) {
+      var e = o.eq[sl]; if (!e) return;
+      if (e.cards) e.cards = e.cards.map(function (cid) { return cid && E.cardFits(sl, cid) ? cid : 0; });
+      if (e.gem) e.gem = e.gem.map(function (cid, gi) { return cid && E.cardFits(sl, cid, gi) ? cid : 0; });
+    });
     // remove da árvore o que não pertence mais à classe (ex.: Adoramus, que só vem por item) e limita ao nível máximo
     var mx = {}; (Y.trees[o.cls] || []).forEach(function (tb) { tb.sk.forEach(function (s) { mx[s[0]] = s[1]; }); });
     Object.keys(o.tree).forEach(function (k) { if (!mx[k]) delete o.tree[k]; else if (o.tree[k] > mx[k]) o.tree[k] = mx[k]; });
@@ -1004,7 +1010,7 @@
     var cards = e && (e.cards || []).filter(Boolean).length;
     var txt = h('span', { class: 'eqt' }, [h('small', null, [E.SLOT_NAMES[sl]]),
       h('b', { style: rar ? 'color:' + rar.color : '' }, [it ? (e.ref ? '+' + e.ref + ' ' : '') + it.n : ok ? '—' : 'bloqueado (2 mãos)']),
-      it ? h('em', null, [E.EXTRA_SLOT[sl] ? (it.jl ? jlRarName(it, e.ref || 0) : E.EXTRA_SLOT[sl] === 'shadow' ? 'Sombrio' : 'Visual') : rar.n + ' · T' + e.tier + (cards ? ' · ' + cards + ' carta(s)' : '') + ((e.gem || []).filter(Boolean).length ? ' · gema' : '')]) : null]);
+      it ? h('em', null, [E.EXTRA_SLOT[sl] ? (it.jl ? jlRarName(it, e.ref || 0) : E.EXTRA_SLOT[sl] === 'shadow' ? 'Sombrio' : 'Visual') : rar.n + ' · T' + e.tier + (cards ? ' · ' + cards + ' carta(s)' : '') + ((e.gem || []).filter(Boolean).length ? ' · gema' : '') + (E.canEnch(it) && (e.ench || [])[0] && Y.itemById[e.ench[0]] ? ' · ' + Y.itemById[e.ench[0]].n : '')]) : null]);
     var warn = sl === 'weapon' && it && it.w && Y.classById[b.cls].wp.indexOf(it.w) < 0;
     var bt = h('button', { class: 'eqs ' + side + (sl === selSlot ? ' sel' : '') + (it ? ' has' : '') + (ok ? '' : ' off') + (warn ? ' warnb' : ''),
       on: { click: function () { selSlot = sl; drawTab(); setTimeout(function () { var ed = $('#slotEd'); if (ed && ed.scrollIntoView) ed.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 20); },
@@ -1054,12 +1060,7 @@
     });
   }
   function cardsFor(sl, gem, gslot) {
-    var ty = E.CARD_TYPE[sl];
-    return Y.items.filter(function (it) {
-      if (it.c !== 'k') return false;
-      if (gem) { if (it.s === 'weapon' || it.s === 'shield' || it.s === 'cloak') return false; return gslot === 0 ? !it.k : !!it.k; }
-      return it.s === ty;
-    });
+    return Y.items.filter(function (it) { return E.cardFits(sl, it, gem ? gslot : undefined); });
   }
   function pickerModal(list, title, onPick, opts) {
     opts = opts || {};
@@ -1181,6 +1182,21 @@
       [0, 1].forEach(function (gi) {
         c.appendChild(h('div', { class: 'row' }, [h('span', { class: 'mut' }, [gi ? 'Gema (miniboss/MVP)' : 'Gema (normal)']),
           h('button', { on: { click: function () { pickerModal(cardsFor(sl, true, gi), 'Gema ' + (gi ? 'de miniboss/MVP' : 'normal'), function (x) { e.gem[gi] = x ? x.id : 0; refresh(true); }, { clear: true, usable: false }); } } }, [e.gem[gi] ? h('span', { class: 'mcell' }, [itemIcon(e.gem[gi]), itemLabel(e.gem[gi])]) : 'Escolher gema'])]));
+      });
+    }
+    if (E.canEnch(it)) {
+      var EN = Y.items.filter(function (x) { return x.s === 'ench'; });
+      e.ench = e.ench || [];
+      c.appendChild(h('div', { class: 'row' }, [h('b', null, ['Encantamento']), h('span', { class: 'tip' }, ['Bênção que vai na própria Batina. A Bênção do mesmo atributo da Batina ativa o bônus de conjunto.'])]));
+      var es = h('select', { on: { change: function (ev) { var v = +ev.target.value; e.ench = v ? [v] : []; refresh(true); } } });
+      es.appendChild(h('option', { value: 0 }, ['— sem Bênção —']));
+      EN.forEach(function (x) { es.appendChild(h('option', { value: x.id, selected: e.ench[0] === x.id }, [x.n])); });
+      c.appendChild(h('div', { class: 'row' }, [h('span', { class: 'mut' }, ['Bênção']), es]));
+      var bx = e.ench[0] && Y.itemById[e.ench[0]];
+      if (bx) (bx.fx || []).forEach(function (f) {
+        var ks = Object.keys(f.s || {}), ae = ks.filter(function (k) { return /^dmgAtkEle:/.test(k); });
+        var txt = f.t || (ae.length >= 10 ? ['Dano ' + (/Magic$/.test(ae[0]) ? 'mágico' : 'físico') + ' de todas as propriedades +' + f.s[ae[0]] + '%'] : ks.map(function (k) { return lblKey(k) + ' ' + (f.s[k] > 0 ? '+' : '') + f.s[k]; })).join(', ');
+        c.appendChild(h('div', { class: 'fx' }, [(f.c && f.c.set ? '(conjunto com ' + f.c.set.map(function (x) { return x[0]; }).join(' + ') + ') ' : f.c ? '(condicional) ' : '') + txt]));
       });
     }
     return c;

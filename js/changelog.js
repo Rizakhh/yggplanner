@@ -4,6 +4,18 @@
 window.YGG = window.YGG || {};
 YGG.changelog = [
   {
+    v: '0.2.5', d: '2026-11-24', t: 'Bênçãos da Batina Angelical',
+    g: [
+      ['Equipamentos', [
+        'Bênçãos de FOR, AGI, VIT, DES, INT e SOR: encantamento que vai na própria Batina Angelical, escolhido no editor da armadura (campo “Encantamento”). Cada uma dá +10 no atributo, DEF +25, DEFM +3 e um bônus próprio (ex.: Bênção de FOR: dano físico +10%).',
+        'A Bênção do mesmo atributo da Batina ativa o conjunto (ex.: Bênção de FOR na Batina Angelical FOR: dano físico +5% e +12% contra todas as raças). Numa armadura que não é Batina Angelical a Bênção não conta.'
+      ]],
+      ['Cálculo', [
+        'Itens do cliente com bônus “contra todas as raças”, “contra todos os tamanhos”, “contra oponentes de todas as propriedades”, “de todas as propriedades” e “contra monstros Normais e Chefes” passam a contar no dano. Antes ficavam só no texto.'
+      ]]
+    ]
+  },
+  {
     v: '0.2.4', d: '2026-11-24', t: 'Joias do Caos e itens próprios do YggIdle',
     g: [
       ['Árvore do Caos', [

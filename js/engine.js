@@ -172,6 +172,20 @@
   }
 
   // ---------- coleta de bônus ----------
+  // encantamentos que vão no próprio equipamento (ex.: Bênção de FOR na Batina Angelical)
+  function canEnch(it) { return !!it && /^Batina Angelical /.test(it.n); }
+  // carta/gema só vale no tipo de slot de origem (carta de armadura só na armadura etc.).
+  // gi: undefined = encaixe de carta; 0 = gema normal; 1 = gema de miniboss/MVP.
+  function cardFits(sl, cid, gi) {
+    var c = typeof cid === 'object' ? cid : Y.itemById[cid];
+    if (!c || c.c !== 'k' || !CARD_TYPE[sl] || c.s !== CARD_TYPE[sl]) return false;
+    if (gi === undefined) return true;
+    if (!GEM_SLOTS[sl]) return false;
+    return gi === 0 ? !c.k : !!c.k;
+  }
+  function eqCards(sl, e) { return (e.cards || []).filter(function (cid) { return cardFits(sl, cid); }); }
+  function eqGems(sl, e) { return (e.gem || []).filter(function (cid, gi) { return cardFits(sl, cid, gi); }); }
+  function enchOf(it, e) { return canEnch(it) ? (e.ench || []).filter(function (cid) { return cid && Y.itemById[cid] && Y.itemById[cid].s === 'ench'; }) : []; }
   function gather(b) {
     var B = {}, notes = [], names = {}, parts = [];
     var eqs = [];
@@ -180,8 +194,9 @@
       var it = Y.itemById[e.id]; if (!it) return;
       eqs.push({ sl: sl, e: e, it: it });
       names[norm(it.n)] = 1;
-      (e.cards || []).forEach(function (cid) { if (cid && Y.itemById[cid]) names[norm(Y.itemById[cid].n)] = 1; });
-      (e.gem || []).forEach(function (cid) { if (cid && Y.itemById[cid]) names[norm(Y.itemById[cid].n)] = 1; });
+      eqCards(sl, e).forEach(function (cid) { names[norm(Y.itemById[cid].n)] = 1; });
+      eqGems(sl, e).forEach(function (cid) { names[norm(Y.itemById[cid].n)] = 1; });
+      enchOf(it, e).forEach(function (cid) { names[norm(Y.itemById[cid].n)] = 1; });
     });
     var base = { atk: 0, def: 0, mdef: 0, matk: 0, wAtk: 0, wMatk: 0, wlv: 1, wtype: 'Fist', refAtk: 0, refOver: 0, twoH: 0 };
     eqs.forEach(function (o) {
@@ -199,7 +214,7 @@
       } else { base.ammoAtk = it.a || 0; }
       applyFx(B, it.fx, ctx, notes, it.n);
       // cartas e gemas
-      (e.cards || []).concat(e.gem || []).forEach(function (cid) {
+      eqCards(o.sl, e).concat(eqGems(o.sl, e), enchOf(it, e)).forEach(function (cid) {
         if (!cid) return; var c = Y.itemById[cid]; if (!c) return;
         applyFx(B, c.fx, ctx, notes, c.n);
       });
@@ -343,6 +358,6 @@
     ST: ST, TR: TR, SLOTS: SLOTS, SLOT_NAMES: SLOT_NAMES, SLOT_TYPE: SLOT_TYPE, CARD_TYPE: CARD_TYPE, GEM_SLOTS: GEM_SLOTS, SIZEFIX: SIZEFIX, RANGED: RANGED,
     newBuild: newBuild, newEq: newEq, compute: compute, gather: gather, statPointsTotal: statPointsTotal, isHigh: isHigh, EXPANDED: EXPANDED, statCost: statCost, statSpent: statSpent,
     SHADOW: SHADOW, VISUAL: VISUAL, EXTRA_SLOT: EXTRA_SLOT, jlRarity: jlRarity,
-    lineRange: lineRange, resolveKey: resolveKey, BT: BT, norm: norm, hooks: HOOKS, condMult: condMult
+    lineRange: lineRange, resolveKey: resolveKey, BT: BT, norm: norm, hooks: HOOKS, condMult: condMult, canEnch: canEnch, cardFits: cardFits
   };
 })();
