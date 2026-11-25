@@ -4,6 +4,30 @@
 window.YGG = window.YGG || {};
 YGG.changelog = [
   {
+    v: '0.2.8', d: '2026-11-25', t: 'Atualização do YggIdle: Cabra Macho na Capa, anéis novos e Ascensão Ying da Cigana',
+    g: [
+      ['Equipamentos', [
+        'Anel do Vulcão e Anel da Vibração reformulados: novos atributos e autoconjurações ao realizar ataques físicos, 1 espaço de carta e uso por todas as classes. A DEF do Anel da Vibração passou de 2 para 0.',
+        'Conjunto dos dois anéis com os novos efeitos: Brandir Machado nv. 5 (5%), Lex Aeterna nv. 1 (2%) e Campo Gravitacional nv. 5 (2%).',
+        'A Capa agora aceita gemas: 1 normal e 1 de miniboss/MVP (das Sementes do Herói, da Magia e dos Deuses).'
+      ]],
+      ['Cartas', [
+        'Cabra Macho (normal e Selada) agora vai na Capa, e o bônus por refino usa o refino da Capa.',
+        'General Tartaruga Selada: dano físico +10% (+15% no refino +15), e o Impacto Explosivo também sai em habilidades físicas.',
+        'Geodoliant só no Acessório Direito, com 7% de Onda Psíquica nv. 2. O conjunto com Ungoliant continua igual.',
+        'General das Almas: ao usar Kaupe, 10% de chance de dano mágico +20% por 5 segundos.',
+        'Ascensão de LHZ: RES, MRES e Talentos +10 só contam no Inferno.'
+      ]],
+      ['Árvore do Caos', [
+        'Ascensão Ying da Cigana com os Nós I a IV: Domínio Musical nv. 10; Ritmo Contagiante nv. 5 e −15% de custo de SP; 5% de chance de Destino nas Cartas em habilidades mágicas; HP +15% e SP +10%.',
+        'Efeitos que reduzem o custo de SP agora aparecem com sinal de menos.'
+      ]],
+      ['Habilidades', [
+        'Destino nas Cartas com as 14 cartas novas e a regra de uma carta ativa por vez. Pela Ascensão da Cigana ou pelo Anel da Vibração, Sono e Incêndio também funcionam em chefes.'
+      ]]
+    ]
+  },
+  {
     v: '0.2.7-hf1', d: '2026-11-24', t: 'Comparar etapas, link ainda menor e mapa do Caos no toque',
     g: [
       ['Etapas', [

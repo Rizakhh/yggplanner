@@ -2239,7 +2239,7 @@
       var box = h('div', { class: 'ascside' + (b.caos.side === sd ? ' on' : '') }, [h('b', null, [sd === 'yang' ? '☀ Yang' : '☾ Ying'])]);
       (F.l[sd] || []).forEach(function (tt, i) {
         var node = CA.nodes.filter(function (n) { return n.t === 'ascensao' && n.s === i + 1; })[0], got = node && cHas(node.i) && b.caos.side === sd;
-        var txt = (tt.e || []).map(function (ev) { var ef = CA.ef[ev[0]] || ['', '', '#']; return '+' + ev[1] + (ef[1] === 'pct' ? '%' : '') + ' ' + ef[2]; }).concat((tt.m || []).map(mecText));
+        var txt = (tt.e || []).map(function (ev) { var ef = CA.ef[ev[0]] || ['', '', '#']; return (CMAP[ev[0]] && CMAP[ev[0]][1] < 0 ? '-' : '+') + ev[1] + (ef[1] === 'pct' ? '%' : '') + ' ' + ef[2]; }).concat((tt.m || []).map(mecText));
         box.appendChild(h('div', { class: 'asct' + (got ? ' got' : '') }, [h('i', null, [ROMAN[i + 1]]), h('span', null, [txt.join('; ') || '—'])]));
       });
       cA.appendChild(box);
@@ -2253,7 +2253,7 @@
     var w = cWhy(n), got = cHas(n.i);
     var kids = [h('div', { class: 'ith' }, [h('span', { class: 'cdot', style: 'background:' + (VCOL[n.v] || '#ccc') }), h('span', null, [h('b', null, [n.n]), h('small', null, [(CTN[n.t] || n.t) + ' · ' + (VNAME[n.v] || n.v) + ' · profundidade ' + n.p])])])];
     if (n.d) kids.push(h('div', { class: 'tdesc' }, n.d.split(/;\s*/).map(function (x) { return h('div', null, [x]); })));
-    if (n.t === 'ascensao') { var F = ascFor(b), tt = F && (F.l[b.caos.side] || [])[n.s - 1]; if (tt) kids.push(h('div', { class: 'tnote' }, [h('b', null, [F.n + ' · ' + (b.caos.side === 'yang' ? 'Yang' : 'Ying')])].concat((tt.e || []).map(function (ev) { var ef = CA.ef[ev[0]] || ['', '', '']; return h('div', null, ['+' + ev[1] + (ef[1] === 'pct' ? '%' : '') + ' ' + ef[2]]); })).concat((tt.m || []).map(function (m) { return h('div', null, [mecText(m)]); })))); }
+    if (n.t === 'ascensao') { var F = ascFor(b), tt = F && (F.l[b.caos.side] || [])[n.s - 1]; if (tt) kids.push(h('div', { class: 'tnote' }, [h('b', null, [F.n + ' · ' + (b.caos.side === 'yang' ? 'Yang' : 'Ying')])].concat((tt.e || []).map(function (ev) { var ef = CA.ef[ev[0]] || ['', '', '']; return h('div', null, [(CMAP[ev[0]] && CMAP[ev[0]][1] < 0 ? '-' : '+') + ev[1] + (ef[1] === 'pct' ? '%' : '') + ' ' + ef[2]]); })).concat((tt.m || []).map(function (m) { return h('div', null, [mecText(m)]); })))); }
     var cost = [];
     if (n.z) cost.push(fmt(n.z) + ' zeny');
     if (n.t === 'ascensao') cost.push('10.000.000 de Caos');

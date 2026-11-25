@@ -15,7 +15,7 @@
     sW: 'sW', sS: 'sS', sB: 'sB', sF: 'sF', sAL: 'sA', sAR: 'sA', vT: 'vT', vM: 'vM', vB: 'vB', vC: 'vC' };
   var EXTRA_SLOT = {}; SHADOW.concat(VISUAL).forEach(function (s) { EXTRA_SLOT[s] = s[0] === 's' ? 'shadow' : 'visual'; });
   var CARD_TYPE = { weapon: 'weapon', shield: 'shield', headT: 'head', headM: 'head', headB: 'head', body: 'body', cloak: 'cloak', shoes: 'shoes', accL: 'acc', accR: 'acc' };
-  var GEM_SLOTS = { body: 1, shoes: 1, accL: 1, accR: 1, headM: 1 };
+  var GEM_SLOTS = { body: 1, shoes: 1, accL: 1, accR: 1, headM: 1, cloak: 1 };
 
   // tabela de ajuste de tamanho da arma (Pequeno, Médio, Grande), rAthena size_fix
   var SIZEFIX = {
@@ -140,6 +140,7 @@
       var key = { 'FOR base': 'str', 'AGI base': 'agi', 'VIT base': 'vit', 'INT base': 'int', 'DES base': 'dex', 'SOR base': 'luk' }[c.min];
       return key && b.stats[key] >= c.v ? 1 : 0;
     }
+    if (c.zone2) return c.zone2.split('|').indexOf(b.opt.zone2) >= 0 ? 1 : 0; // zona específica (ex.: só no Inferno)
     if (c.zone) return b.opt.zone ? 1 : 0;
     if (c.job) {
       var j = c.job.toLowerCase().replace(/s$/, '');
@@ -179,6 +180,7 @@
   function cardFits(sl, cid, gi) {
     var c = typeof cid === 'object' ? cid : Y.itemById[cid];
     if (!c || c.c !== 'k' || !CARD_TYPE[sl] || c.s !== CARD_TYPE[sl]) return false;
+    if (c.only && c.only !== sl) return false; // ex.: Carta Geodoliant só no Acessório Direito
     if (gi === undefined) return true;
     if (!GEM_SLOTS[sl]) return false;
     return gi === 0 ? !c.k : !!c.k;
