@@ -4,6 +4,20 @@
 window.YGG = window.YGG || {};
 YGG.changelog = [
   {
+    v: '0.2.11', d: '2026-11-25', t: 'Habilidades concedidas por equipamentos',
+    g: [
+      ['Habilidades', [
+        'Equipamentos, cartas e consumíveis que concedem uma habilidade agora a mostram sozinhos na aba Extra. O planner passou a reconhecer cerca de 290 desses efeitos, antes eram menos de 200: textos como “Permite o uso da habilidade Teleporte em nível 1”, “Habilita [Identificar Item] e [Sentido Sobrenatural] nv. 1” e “Concede [Consagração] nv. 5”.',
+        'Habilidades de fora das árvores das classes (Teleporte, Bloqueio, Poder de Odin, Consagração, Para Prontera...) usam o nome do cliente do jogo.',
+        'Autoconjuração (“chance de autoconjurar…”) não conta: a habilidade não fica disponível para usar.'
+      ]],
+      ['Simulação', [
+        'Na rotação, as habilidades concedidas aparecem num grupo próprio, com o nível e o item de origem.',
+        'O nível segue o item. Ao tirar o equipamento, a habilidade sai da rotação.'
+      ]]
+    ]
+  },
+  {
     v: '0.2.10', d: '2026-11-25', t: 'Simulação: redução de dano e elemento da arma',
     g: [
       ['Simulação', [

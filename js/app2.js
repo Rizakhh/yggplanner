@@ -69,7 +69,7 @@
       var a = byEn[en] || byPt[pt] || byEn[pt]; if (a) { SKA[id] = a; if (!AKS[a]) AKS[a] = id; }
     });
   })();
-  function skLabel(x) { if (Y.sk2 && Y.sk2[x]) return Y.sk2[x].n; var s = Y.skills[x]; return s ? s.n.replace(/ \(.*\)$/, '') : x; }
+  function skLabel(x) { if (Y.sk2 && Y.sk2[x]) return Y.sk2[x].n; var s = Y.skills[x]; return s ? s.n.replace(/ \(.*\)$/, '') : (Y.skn && Y.skn[x]) || x; }
 
   // tooltip flutuante
   var tipEl = null;
@@ -1794,6 +1794,7 @@
     var c2 = h('div', { class: 'card' }, [h('h3', null, ['Rotação de habilidades (prioridade de cima para baixo)'])]);
     c2.appendChild(h('div', { class: 'tip' }, ['Sem habilidade disponível (recarga ou SP), o personagem usa o ataque básico.']));
     var sk = simSkills().filter(function (s) { return s.k !== 'b'; });
+    S.rot = rotAvail();
     S.rot.forEach(function (r, i) {
       var s = Y.skills[r.id]; if (!s) return;
       var nm = h('span', { class: 'mcell', style: 'min-width:260px' }, [(i + 1) + '. ', SKA[s.id] ? skillIcon(SKA[s.id]) : null, s.n]);
@@ -1804,7 +1805,9 @@
         h('button', { on: { click: function () { S.rot.splice(i, 1); refresh(true); } } }, ['×'])]));
     });
     var add = h('select', { on: { change: function (e) { if (e.target.value) { var s = Y.skills[e.target.value]; S.rot.push({ id: s.id, lv: b.skills[s.id] != null ? b.skills[s.id] : s.max }); refresh(true); } } } }, [h('option', { value: '' }, ['+ adicionar habilidade'])]);
-    sk.forEach(function (s) { add.appendChild(h('option', { value: s.id }, [s.n])); });
+    var GS = grantSrc(), skC = sk.filter(function (s) { return !GS[s.id]; }), skG = sk.filter(function (s) { return GS[s.id]; });
+    skC.forEach(function (s) { add.appendChild(h('option', { value: s.id }, [s.n])); });
+    if (skG.length) add.appendChild(h('optgroup', { label: 'Concedidas por equipamento/consumível' }, skG.map(function (s) { return h('option', { value: s.id }, [s.n + ' · Nv ' + GS[s.id].lv + ' (' + GS[s.id].src + ')']); })));
     c2.appendChild(h('div', { class: 'row' }, [add, h('button', { on: { click: function () { autoRot(); refresh(true); } } }, ['Rotação automática'])]));
     t.appendChild(c2);
     // execução
@@ -1823,7 +1826,7 @@
     var runs = Math.min(S.runs, 200), res = [];
     [0, 1, 2].forEach(function (i) {
       var bb = stageBuild(i); if (!bb) return; var rr = stageR(i);
-      var cfg = { mon: mon, n: S.n, rot: S.rot, farm: S.farm, maxT: S.maxT, mobDelay: S.mobDelay, mobEle: S.mobEle, weaponEle: S.weaponEle || 'Neutro', healPs: S.healPs, spRegen: S.spRegen, seed: 12345 };
+      var cfg = { mon: mon, n: S.n, rot: rotAvail(), farm: S.farm, maxT: S.maxT, mobDelay: S.mobDelay, mobEle: S.mobEle, weaponEle: S.weaponEle || 'Neutro', healPs: S.healPs, spRegen: S.spRegen, seed: 12345 };
       var one = D.simulate(rr, bb, cfg, false), mc = D.monteCarlo(rr, bb, cfg, runs);
       res.push({ i: i, lv: bb.lv, one: one, mc: mc });
     });
@@ -1841,7 +1844,7 @@
   }
   function runSim(host) {
     var S = b.sim, mon = Y.monById[S.mon]; if (!mon) return;
-    var cfg = { mon: mon, n: S.n, rot: S.rot, farm: S.farm, maxT: S.maxT, mobDelay: S.mobDelay, mobEle: S.mobEle, weaponEle: S.weaponEle || 'Neutro', healPs: S.healPs, spRegen: S.spRegen, seed: 12345 };
+    var cfg = { mon: mon, n: S.n, rot: rotAvail(), farm: S.farm, maxT: S.maxT, mobDelay: S.mobDelay, mobEle: S.mobEle, weaponEle: S.weaponEle || 'Neutro', healPs: S.healPs, spRegen: S.spRegen, seed: 12345 };
     var one = D.simulate(R, b, cfg, true);
     var mc = D.monteCarlo(R, b, cfg, S.runs);
     simRes = { one: one, mc: mc, cfg: cfg };
@@ -1915,6 +1918,12 @@
     var s = Y.sk2[a], k = nrm(s.n); if (!SKN[k]) SKN[k] = a;
     if (s.en && !SKN[nrm(s.en)]) SKN[nrm(s.en)] = a; if (s.i) SKI[s.i] = a;
   });
+  // nomes do cliente do jogo (data/sknames.js) cobrem habilidades fora das árvores (Teleporte, Bloqueio, Consagração...)
+  Object.keys(Y.skn || {}).forEach(function (a) { var k = nrm(Y.skn[a]); if (k.length > 2 && !SKN[k]) SKN[k] = a; });
+  // nomes que os textos dos itens escrevem diferente do jogo
+  [['cura', 'AL_HEAL'], ['perfeicao de arma', 'BS_WEAPONPERFECT'], ['esferas dagua', 'WZ_WATERBALL'], ['esferas d agua', 'WZ_WATERBALL']].forEach(function (x) { if (!SKN[x[0]]) SKN[x[0]] = x[1]; });
+  var SKC = {}; Object.keys(SKN).forEach(function (k) { var c = k.replace(/ /g, ''); if (!SKC[c]) SKC[c] = SKN[k]; });
+  function skFind(s) { var k = nrm(s); return SKN[k] || SKC[k.replace(/ /g, '')] || null; }
   function skNum(id) { var a = SKI[id]; return a ? skLabel(a) : 'habilidade #' + id; }
   var CONS = {}; (Y.consum || []).forEach(function (c) { CONS[c.id] = c; });
 
@@ -1928,12 +1937,28 @@
   }
 
   // ----- habilidades concedidas por itens, Ascensão, consumíveis ou à mão -----
-  var GRX = [/\[([^\]]+)\]\s*(?:nv\.?|n[íi]vel)\s*(\d+)/i, /habilidade\s*["“]([^"”]+)["”]\s*(?:em\s*)?n[íi]vel\s*(\d+)/i, /["“]([^"”]+?)\s+n[íi]vel\s*(\d+)["”]/i];
-  function parseGrant(t) {
-    if (!/(habilita|concede|permite|utiliza)/i.test(t || '')) return null;
-    for (var i = 0; i < GRX.length; i++) { var m = t.match(GRX[i]); if (m) { var ae = SKN[nrm(m[1])]; if (ae) return { ae: ae, lv: +m[2] }; } }
+  // "Habilita [X] nv. 5", "Permite o uso da habilidade X em nível 1", "Concede [A] nv.4 e [B] nv.5", "magias A e B em nível 1"...
+  // autoconjuração ("chance de", "automaticamente") não conta: a habilidade não fica disponível para usar.
+  var GVERB = /(habilita|concede|permite|possibilita)/i, GAUTO = /(chance|autoconj|auto-conj|automaticamente|conjurar)/i;
+  function tailSkill(part) {
+    var w = part.replace(/[\[\]"“”'‘’]/g, ' ').trim().split(/\s+/).filter(Boolean);
+    for (var k = Math.min(6, w.length); k > 0; k--) { var ae = skFind(w.slice(-k).join(' ')); if (ae) return ae; }
     return null;
   }
+  function parseGrants(t) {
+    var out = [], seen = {};
+    String(t || '').split(/;|\n|\.\s+(?=[A-ZÀ-Ú])/).forEach(function (s) {
+      var v = s.match(GVERB); if (!v || GAUTO.test(s)) return;
+      var rx = /(?:\bem\s+)?(?:n[íi]vel|\bnv)\.?\s*0*(\d+)/gi, last = v.index + v[0].length, m;
+      while ((m = rx.exec(s))) {
+        if (m.index < last) continue;
+        var lv = +m[1], pre = s.slice(last, m.index); last = rx.lastIndex;
+        pre.split(/,|\s+e\s+/).forEach(function (p) { var ae = tailSkill(p); if (ae && !seen[ae] && lv > 0) { seen[ae] = 1; out.push({ ae: ae, lv: lv }); } });
+      }
+    });
+    return out;
+  }
+  function parseGrant(t) { return parseGrants(t)[0] || null; }
   function grantedSkills() {
     var out = [], names = (R && R.G && R.G.names) || {};
     E.SLOTS.forEach(function (sl) {
@@ -1941,9 +1966,9 @@
       var list = [it].concat((e.cards || []).concat(e.gem || []).map(function (c) { return c && Y.itemById[c]; }).filter(Boolean));
       list.forEach(function (x) {
         (x.fx || []).forEach(function (f) {
-          if (!f.t) return; var g = parseGrant(f.t); if (!g) return;
+          if (!f.t) return; var gs = parseGrants(f.t); if (!gs.length) return;
           var on = !f.c || !!E.condMult(f.c, { b: b, ref: e.ref || 0, names: names });
-          out.push({ ae: g.ae, lv: g.lv, src: x.n, srcId: x.id, kind: 'item', on: on, txt: f.t });
+          gs.forEach(function (g) { out.push({ ae: g.ae, lv: g.lv, src: x.n, srcId: x.id, kind: 'item', on: on, txt: f.t }); });
         });
       });
     });
@@ -1952,15 +1977,30 @@
     });
     (b.cons || []).forEach(function (c) {
       var it = CONS[c.id]; if (!it || !c.on) return;
-      it.d.forEach(function (t) { var g = parseGrant(t); if (g) out.push({ ae: g.ae, lv: g.lv, src: it.n, srcId: it.id, kind: 'cons', on: true, txt: t }); });
+      it.d.forEach(function (t) { parseGrants(t).forEach(function (g) { out.push({ ae: g.ae, lv: g.lv, src: it.n, srcId: it.id, kind: 'cons', on: true, txt: t }); }); });
     });
     Object.keys(b.xsk || {}).forEach(function (ae) { if (b.xsk[ae]) out.push({ ae: ae, lv: b.xsk[ae], src: 'Adicionada à mão', kind: 'manual', on: true }); });
     return out;
   }
+  // habilidades concedidas (item, Ascensão, consumível ou à mão) que não são da classe: id do simulador -> { lv, src }
+  function grantSrc() {
+    var own = {}, out = {}; Y.skillsFor(b.cls).forEach(function (s) { own[s.id] = 1; });
+    grantedSkills().forEach(function (g) {
+      var id = AKS[g.ae]; if (!g.on || !id || !Y.skills[id] || own[id]) return;
+      if (!out[id] || g.lv > out[id].lv) out[id] = { lv: Math.min(Y.skills[id].max, g.lv), src: g.src };
+    });
+    return out;
+  }
   function simSkills() {
-    var base = Y.skillsFor(b.cls).slice(), ids = {}; base.forEach(function (s) { ids[s.id] = 1; });
-    grantedSkills().forEach(function (g) { var id = AKS[g.ae]; if (g.on && id && Y.skills[id] && !ids[id]) { ids[id] = 1; base.push(Y.skills[id]); if (b.skills[id] == null && Y.skills[id].k !== 'b') b.skills[id] = Math.min(Y.skills[id].max, g.lv); } });
+    var base = Y.skillsFor(b.cls).slice(), GS = grantSrc();
+    // o nível acompanha o item: trocar ou tirar o equipamento atualiza
+    Object.keys(GS).forEach(function (id) { base.push(Y.skills[id]); if (Y.skills[id].k !== 'b') b.skills[id] = GS[id].lv; });
     return base;
+  }
+  // rotação sem as habilidades que deixaram de estar disponíveis (item retirado, condição não atendida)
+  function rotAvail() {
+    var ok = {}, GS = grantSrc(); simSkills().forEach(function (s) { ok[s.id] = 1; });
+    return (b.sim.rot || []).filter(function (r) { if (GS[r.id] && r.lv > GS[r.id].lv) r.lv = GS[r.id].lv; return ok[r.id]; });
   }
   // buffs concedidos (por item, Ascensão ou à mão) entram no cálculo se a árvore não tiver o buff ligado
   E.hooks.push(function (bb, B, notes, add) {
