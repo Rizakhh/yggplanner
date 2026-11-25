@@ -1003,7 +1003,17 @@
       it.f ? h('div', { class: 'tip idesc' }, [String(it.f).slice(0, 420)]) : null,
       it.j ? h('div', { class: 'tip', style: 'opacity:.75' }, ['Classes: ' + (Array.isArray(it.j) ? it.j.join(', ') : it.j)]) : null]);
   }
-  var EQL = ['headT', 'body', 'weapon', 'cloak', 'accL'], EQR = ['headM', 'headB', 'shield', 'shoes', 'accR'];
+  // grade em pares (esquerda - direita); no Sombrio e no Visual cada slot fica na posição do equivalente comum
+  var EQL = ['headT', 'headB', 'weapon', 'cloak', 'accR'], EQR = ['headM', 'body', 'shield', 'shoes', 'accL'];
+  var EQMODES = [['base', 'Comum'], ['shadow', 'Sombrio'], ['visual', 'Visual']];
+  var EQMAP = { shadow: { weapon: 'sW', shield: 'sS', body: 'sB', shoes: 'sF', accL: 'sAL', accR: 'sAR' }, visual: { headT: 'vT', headM: 'vM', headB: 'vB', cloak: 'vC' } };
+  var eqMode = EQMAP[UI.eqMode] ? UI.eqMode : 'base';
+  function eqModeOf(sl) { return E.EXTRA_SLOT[sl] || 'base'; }
+  function eqPos(sl, side) {
+    if (eqMode === 'base') return eqSlot(sl, side);
+    var x = EQMAP[eqMode][sl];
+    return x ? eqSlot(x, side) : h('div', { class: 'eqs eqnone ' + side, 'aria-hidden': 'true' });
+  }
   function eqSlot(sl, side) {
     var e = b.eq[sl], it = e && Y.itemById[e.id], rar = e ? Y.bonus.rarities[e.rar || 0] : null, ok = slotAllowed(sl);
     var ico = h('span', { class: 'eqi' }, [it ? itemIcon(it.id) : h('span', { class: 'eqph eq-' + sl })]);
@@ -1022,16 +1032,21 @@
   function tabEquip(t) {
     var cl = Y.classById[b.cls];
     var win = h('div', { class: 'rowin eqwin', style: '--lc:' + Y.lineColor(b.cls) }, [
-      h('div', { class: 'rotitle' }, [h('span', null, ['Equipamentos']), h('small', null, ['ALT+Q']), h('span', { class: 'grow' }), h('small', null, ['clique para editar · duplo clique para trocar'])])]);
+      h('div', { class: 'rotitle' }, [h('span', null, ['Equipamentos']), h('small', null, ['ALT+Q']),
+        h('span', { class: 'seg2 eqmode' }, EQMODES.map(function (m) { return h('button', { class: eqMode === m[0] ? 'on' : '', title: m[0] === 'base' ? 'Equipamentos comuns' : m[0] === 'shadow' ? 'Equipamentos de Sombra' : 'Visuais (trajes)', on: { click: function () {
+          if (eqMode === m[0]) return; eqMode = m[0]; UI.eqMode = eqMode; uiSave();
+          if (eqModeOf(selSlot) !== eqMode) selSlot = eqMode === 'base' ? 'weapon' : eqMode === 'shadow' ? 'sW' : 'vT';
+          drawTab(); } } }, [m[1]]); })),
+        h('span', { class: 'grow' }), h('small', null, ['clique para editar · duplo clique para trocar'])])]);
     var grid = h('div', { class: 'eqgrid' });
     var colL = h('div', { class: 'eqcol' }), colR = h('div', { class: 'eqcol' });
-    EQL.forEach(function (sl) { colL.appendChild(eqSlot(sl, 'l')); });
-    EQR.forEach(function (sl) { colR.appendChild(eqSlot(sl, 'r')); });
+    EQL.forEach(function (sl) { colL.appendChild(eqPos(sl, 'l')); });
+    EQR.forEach(function (sl) { colR.appendChild(eqPos(sl, 'r')); });
     var mid = h('div', { class: 'eqmid' }, [h('div', { class: 'eqstage' }, [h('span', { class: 'rune' }), h('span', { class: 'motes' }), h('span', { class: 'ped' }), spriteEl(b.cls, 'big')]),
       h('div', { class: 'eqname' }, [h('b', null, [b.name || 'Sem nome']), h('small', null, [cl.n + ' · Nv ' + b.lv])])]);
     grid.appendChild(colL); grid.appendChild(mid); grid.appendChild(colR);
     win.appendChild(grid);
-    win.appendChild(h('div', { class: 'eqammo' }, [eqSlot('ammo', 'r')]));
+    if (eqMode === 'base') win.appendChild(h('div', { class: 'eqammo' }, [eqSlot('ammo', 'r')]));
     win.appendChild(h('div', { class: 'eqfoot' }, [
       h('span', null, [h('small', null, ['ATQ']), h('b', null, [fmt(R.batk * 2) + ' + ' + fmt(R.wAtkBase + R.refAtk + R.equipAtk)])]),
       h('span', null, [h('small', null, ['ATQM']), h('b', null, [fmt(R.matk)])]),
@@ -1040,14 +1055,6 @@
       h('span', null, [h('small', null, ['ASPD']), h('b', null, [fmt(R.aspdEff)])]),
       h('span', null, [h('small', null, ['Peso']), h('b', { class: R.weight > R.maxWeight ? 'bad' : '' }, [fmt(R.weight) + ' / ' + fmt(R.maxWeight)])])]));
     t.appendChild(win);
-    // equipamento sombrio e visual
-    var xw = h('div', { class: 'rowin eqwin eqx', style: '--lc:' + Y.lineColor(b.cls) }, [
-      h('div', { class: 'rotitle' }, [h('span', null, ['Sombrio e Visual']), h('span', { class: 'grow' }), h('small', null, ['equipamentos de Sombra e visuais (trajes)'])])]);
-    var xg = h('div', { class: 'eqxgrid' });
-    var cS = h('div', { class: 'eqcol' }, [h('div', { class: 'eqxh' }, ['Sombrio'])]), cV = h('div', { class: 'eqcol' }, [h('div', { class: 'eqxh' }, ['Visual'])]);
-    E.SHADOW.forEach(function (sl) { cS.appendChild(eqSlot(sl, 'r')); });
-    E.VISUAL.forEach(function (sl) { cV.appendChild(eqSlot(sl, 'r')); });
-    xg.appendChild(cS); xg.appendChild(cV); xw.appendChild(xg); t.appendChild(xw);
     var ed = slotEditor(selSlot); ed.id = 'slotEd'; t.appendChild(ed);
     t.appendChild(extraEditor());
   }

@@ -195,7 +195,7 @@
       eqs.push({ sl: sl, e: e, it: it });
       names[norm(it.n)] = 1;
       eqCards(sl, e).forEach(function (cid) { names[norm(Y.itemById[cid].n)] = 1; });
-      eqGems(sl, e).forEach(function (cid) { names[norm(Y.itemById[cid].n)] = 1; });
+      // gemas não contam para combos de cartas
       enchOf(it, e).forEach(function (cid) { names[norm(Y.itemById[cid].n)] = 1; });
     });
     var base = { atk: 0, def: 0, mdef: 0, matk: 0, wAtk: 0, wMatk: 0, wlv: 1, wtype: 'Fist', refAtk: 0, refOver: 0, twoH: 0 };

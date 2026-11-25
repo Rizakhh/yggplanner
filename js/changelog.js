@@ -4,6 +4,27 @@
 window.YGG = window.YGG || {};
 YGG.changelog = [
   {
+    v: '0.2.6', d: '2026-11-24', t: 'Equipamentos reorganizados e troca Comum/Sombrio/Visual',
+    g: [
+      ['Equipamentos', [
+        'Novo seletor Comum · Sombrio · Visual no topo do quadro de Equipamentos. O Sombrio e o Visual usam o mesmo quadro dos equipamentos comuns, com cada slot na posição do equivalente comum (ex.: Sombrio: calçado no lugar do Calçado). O quadro separado “Sombrio e Visual” saiu.',
+        'Slots em pares: Elmo superior e Elmo médio · Elmo inferior e Armadura · Arma e Escudo · Manto e Calçado · Acessório (D) e Acessório (E).',
+        'O modo escolhido fica salvo no navegador.'
+      ]]
+    ]
+  },
+  {
+    v: '0.2.5-hf1', d: '2026-11-24', t: 'Cartas e gemas só no slot de origem',
+    g: [
+      ['Equipamentos', [
+        'Gemas de carta agora só aceitam cartas do próprio slot: carta de armadura só na Armadura, de calçado só no Calçado, de acessório só no Acessório e de cabeça só no Elmo médio. Antes a gema aceitava carta de qualquer um desses slots.',
+        'A gema normal só aceita carta normal e a gema de miniboss/MVP só aceita carta de miniboss ou MVP, sempre do mesmo slot.',
+        'Builds salvas ou importadas com carta ou gema no slot errado têm o encaixe esvaziado ao abrir, e esses encaixes não contam mais no cálculo.',
+        'Gemas não ativam mais combos de cartas, como já dizia a dica do editor. Antes uma carta usada como gema completava o conjunto.'
+      ]]
+    ]
+  },
+  {
     v: '0.2.5', d: '2026-11-24', t: 'Bênçãos da Batina Angelical',
     g: [
       ['Equipamentos', [
