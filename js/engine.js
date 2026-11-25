@@ -5,9 +5,15 @@
   var Y = window.YGG;
   var ST = ['str', 'agi', 'vit', 'int', 'dex', 'luk'];
   var TR = ['pow', 'sta', 'wis', 'spl', 'con', 'crt'];
-  var SLOTS = ['weapon', 'shield', 'headT', 'headM', 'headB', 'body', 'cloak', 'shoes', 'accL', 'accR', 'ammo'];
-  var SLOT_NAMES = { weapon: 'Arma', shield: 'Escudo', headT: 'Elmo superior', headM: 'Elmo médio', headB: 'Elmo inferior', body: 'Armadura', cloak: 'Manto', shoes: 'Calçado', accL: 'Acessório (E)', accR: 'Acessório (D)', ammo: 'Munição' };
-  var SLOT_TYPE = { weapon: 'weapon', shield: 'shield', headT: 'headT', headM: 'headM', headB: 'headB', body: 'body', cloak: 'cloak', shoes: 'shoes', accL: 'acc', accR: 'acc', ammo: 'ammo' };
+  // sW…sAR = equipamento sombrio (Sombra), vT…vC = visual. Não recebem refino de DEF, cartas nem bônus aleatórios comuns.
+  var SHADOW = ['sW', 'sS', 'sB', 'sF', 'sAL', 'sAR'], VISUAL = ['vT', 'vM', 'vB', 'vC'];
+  var SLOTS = ['weapon', 'shield', 'headT', 'headM', 'headB', 'body', 'cloak', 'shoes', 'accL', 'accR', 'ammo'].concat(SHADOW, VISUAL);
+  var SLOT_NAMES = { weapon: 'Arma', shield: 'Escudo', headT: 'Elmo superior', headM: 'Elmo médio', headB: 'Elmo inferior', body: 'Armadura', cloak: 'Manto', shoes: 'Calçado', accL: 'Acessório (E)', accR: 'Acessório (D)', ammo: 'Munição',
+    sW: 'Sombrio: arma', sS: 'Sombrio: escudo', sB: 'Sombrio: armadura', sF: 'Sombrio: calçado', sAL: 'Sombrio: acessório (E)', sAR: 'Sombrio: acessório (D)',
+    vT: 'Visual: topo', vM: 'Visual: meio', vB: 'Visual: baixo', vC: 'Visual: capa' };
+  var SLOT_TYPE = { weapon: 'weapon', shield: 'shield', headT: 'headT', headM: 'headM', headB: 'headB', body: 'body', cloak: 'cloak', shoes: 'shoes', accL: 'acc', accR: 'acc', ammo: 'ammo',
+    sW: 'sW', sS: 'sS', sB: 'sB', sF: 'sF', sAL: 'sA', sAR: 'sA', vT: 'vT', vM: 'vM', vB: 'vB', vC: 'vC' };
+  var EXTRA_SLOT = {}; SHADOW.concat(VISUAL).forEach(function (s) { EXTRA_SLOT[s] = s[0] === 's' ? 'shadow' : 'visual'; });
   var CARD_TYPE = { weapon: 'weapon', shield: 'shield', headT: 'head', headM: 'head', headB: 'head', body: 'body', cloak: 'cloak', shoes: 'shoes', accL: 'acc', accR: 'acc' };
   var GEM_SLOTS = { body: 1, shoes: 1, accL: 1, accR: 1, headM: 1 };
 
@@ -78,12 +84,14 @@
     var t = BT[typeId]; if (!t || rar < 1) return null;
     var r = t.r[rar - 1]; if (!r) return null;
     var m = t.noScale ? 1 : (Y.bonus.tierMult[tier] || 1);
-    return [Math.floor(r[0] * m), Math.floor(r[1] * m)];
+    return [Math.round(r[0] * m), Math.round(r[1] * m)];
   }
+
+  function jlRarity(it, ref) { var n = 0; (it.jr || []).forEach(function (r) { if (ref >= r) n++; }); return n; }
 
   // ---------- condições ----------
   function slotRef(b, which) {
-    var sl = { 'Armadura': 'body', 'Manto': 'cloak', 'Capa': 'cloak', 'Botas': 'shoes', 'Calçado': 'shoes', 'Arma': 'weapon', 'Escudo': 'shield', 'Elmo': 'headT' };
+    var sl = { 'Armadura': 'body', 'Batina': 'body', 'Manto': 'cloak', 'Capa': 'cloak', 'Botas': 'shoes', 'Calçado': 'shoes', 'Arma': 'weapon', 'Escudo': 'shield', 'Elmo': 'headT', 'Joia': 'sS', 'Jóia': 'sS' };
     var parts = which.split(/ ou /), best = 0;
     var out = [];
     parts.forEach(function (p) {
@@ -107,7 +115,7 @@
         var ok = c.set[i].some(function (n) { return ctx.names[norm(n)]; });
         if (!ok) return 0;
       }
-      return 1;
+      if (!c.sum) return 1;
     }
     if (c.sum) return sumRef(b, c.sum) >= c.r ? 1 : 0;
     if (c.rx) return slotRef(b, c.rx) >= c.r ? 1 : 0;
@@ -153,6 +161,7 @@
         Object.keys(f.s).forEach(function (k) {
           var v = f.s[k];
           if (k.indexOf('ref2:') === 0) { add(B, k.slice(5), v * ctx.ref * ctx.ref); }
+          else if (k.indexOf('ref1:') === 0) { add(B, k.slice(5), v * ctx.ref * m); }
           else add(B, k, v * m);
         });
       } else if (f.t) {
@@ -185,7 +194,7 @@
       } else if (o.sl !== 'ammo') {
         base.def += (it.d || 0);
         var ta = Y.ra.refine.Armor1;
-        if (ta && ref > 0 && o.sl !== 'accL' && o.sl !== 'accR') base.def += ta.bonus[ref - 1] || 0;
+        if (ta && ref > 0 && o.sl !== 'accL' && o.sl !== 'accR' && !EXTRA_SLOT[o.sl]) base.def += ta.bonus[ref - 1] || 0;
         base.mdef += (it.md || 0);
       } else { base.ammoAtk = it.a || 0; }
       applyFx(B, it.fx, ctx, notes, it.n);
@@ -194,8 +203,16 @@
         if (!cid) return; var c = Y.itemById[cid]; if (!c) return;
         applyFx(B, c.fx, ctx, notes, c.n);
       });
+      // bônus aleatórios próprios do item (ex.: Joia do Destino): a raridade sobe com o refino e cada raridade libera 1 linha
+      if (it.jl) {
+        var jr = jlRarity(it, ref);
+        (e.jlines || []).slice(0, jr).forEach(function (ix) {
+          var J = it.jl[ix]; if (!J) return;
+          J.k.forEach(function (k) { add(B, k, J.v[jr - 1]); });
+        });
+      }
       // bônus aleatórios
-      (e.lines || []).forEach(function (L) {
+      if (!EXTRA_SLOT[o.sl]) (e.lines || []).forEach(function (L) {
         var t = BT[L.t]; if (!t || !L.v) return;
         var key = resolveKey(t, L.p);
         var v = L.v * (t.neg ? -1 : 1);
@@ -325,6 +342,7 @@
   Y.E = {
     ST: ST, TR: TR, SLOTS: SLOTS, SLOT_NAMES: SLOT_NAMES, SLOT_TYPE: SLOT_TYPE, CARD_TYPE: CARD_TYPE, GEM_SLOTS: GEM_SLOTS, SIZEFIX: SIZEFIX, RANGED: RANGED,
     newBuild: newBuild, newEq: newEq, compute: compute, gather: gather, statPointsTotal: statPointsTotal, isHigh: isHigh, EXPANDED: EXPANDED, statCost: statCost, statSpent: statSpent,
+    SHADOW: SHADOW, VISUAL: VISUAL, EXTRA_SLOT: EXTRA_SLOT, jlRarity: jlRarity,
     lineRange: lineRange, resolveKey: resolveKey, BT: BT, norm: norm, hooks: HOOKS, condMult: condMult
   };
 })();

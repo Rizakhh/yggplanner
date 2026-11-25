@@ -494,3 +494,12 @@ img.mmapbig{width:100%;border-radius:10px;border:1px solid var(--line)}
   .banner .bpf{transform:scale(.85)}
   .dstage{height:170px}
 }
+/* descrição do equipamento mais legível */
+.itip .idesc,.idesc{color:#ddd3b8;font-size:12.5px;line-height:1.5;margin-top:6px;white-space:pre-line}
+/* sombrio e visual (0.2.3) */
+.eqx{margin-top:12px}
+.eqxgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:14px}
+.eqxh{font-family:var(--font-display);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold2);padding:0 2px}
+@media(max-width:620px){.eqxgrid{grid-template-columns:1fr}}
+.clitag{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:999px;font-size:10px;font-weight:600;letter-spacing:.03em;white-space:nowrap;vertical-align:middle;color:#e5b07a;background:rgba(229,139,122,.12);border:1px solid rgba(229,139,122,.35)}
+.clitag.cf{color:#9fd8a8;background:rgba(120,200,140,.1);border-color:rgba(120,200,140,.35)}

@@ -137,6 +137,8 @@
     // remove da árvore o que não pertence mais à classe (ex.: Adoramus, que só vem por item) e limita ao nível máximo
     var mx = {}; (Y.trees[o.cls] || []).forEach(function (tb) { tb.sk.forEach(function (s) { mx[s[0]] = s[1]; }); });
     Object.keys(o.tree).forEach(function (k) { if (!mx[k]) delete o.tree[k]; else if (o.tree[k] > mx[k]) o.tree[k] = mx[k]; });
+    // bônus aleatórios: T5 não existe no YggIdle e as faixas foram corrigidas (0.2.3): traz cada linha para dentro da faixa do jogo
+    Object.keys(o.eq).forEach(function (k) { var e = o.eq[k]; if (!e || typeof e !== 'object') return; if (e.tier > 4) e.tier = 4; clampLines(e); });
     return o;
   }
   function save() { try { localStorage.setItem(LS, JSON.stringify(b)); } catch (e) { } updateState(); }
@@ -976,7 +978,8 @@
   }
 
   // ---------- aba Equipamentos ----------
-  var pickFilter = { q: '', cls: true, kind: 'item' };
+  var pickFilter = { q: '', cls: true, kind: 'item', cli: false };
+  function cliTag(it) { return !it.cl ? null : h('span', { class: 'clitag' + (it.cf ? ' cf' : ''), title: it.cf ? 'Item próprio do YggIdle, lido do cliente do jogo' : 'Item que está no cliente do jogo mas não aparece na wiki: pode não existir no servidor' }, [it.cf ? 'YggIdle · cliente' : 'só no cliente']); }
   function slotAllowed(sl) { if (sl === 'shield' && b.eq.weapon && (Y.itemById[b.eq.weapon.id] || {}).th) return false; return true; }
   function usable(it) {
     var cl = Y.classById[b.cls];
@@ -990,7 +993,8 @@
     if (it.a) d.push('ATQ ' + it.a); if (it.ma) d.push('ATQM ' + it.ma); if (it.d) d.push('DEF ' + it.d); if (it.md) d.push('MDEF ' + it.md);
     if (it.wl) d.push('Arma nv ' + it.wl); if (it.lv) d.push('Nv ' + it.lv); if (it.wt) d.push('Peso ' + it.wt);
     return h('div', { class: 'itip' }, [h('div', { class: 'ith' }, [itemIcon(it.id, 'ico lg'), h('span', null, [h('b', { style: rar ? 'color:' + rar.color : '' }, [(e && e.ref ? '+' + e.ref + ' ' : '') + it.n + (it.sl ? ' [' + it.sl + ']' : '')]), h('small', null, [(it.w ? (Y.weaponNames[it.w] || it.w) + ' · ' : '') + d.join(' · ')])])]),
-      it.f ? h('div', { class: 'tip' }, [String(it.f).slice(0, 420)]) : null,
+      it.cl ? h('div', { class: 'tip' }, [cliTag(it), it.cf ? ' Lido do cliente do jogo.' : ' Está no cliente do jogo, mas não na wiki: confira se existe no YggIdle.']) : null,
+      it.f ? h('div', { class: 'tip idesc' }, [String(it.f).slice(0, 420)]) : null,
       it.j ? h('div', { class: 'tip', style: 'opacity:.75' }, ['Classes: ' + (Array.isArray(it.j) ? it.j.join(', ') : it.j)]) : null]);
   }
   var EQL = ['headT', 'body', 'weapon', 'cloak', 'accL'], EQR = ['headM', 'headB', 'shield', 'shoes', 'accR'];
@@ -1000,11 +1004,11 @@
     var cards = e && (e.cards || []).filter(Boolean).length;
     var txt = h('span', { class: 'eqt' }, [h('small', null, [E.SLOT_NAMES[sl]]),
       h('b', { style: rar ? 'color:' + rar.color : '' }, [it ? (e.ref ? '+' + e.ref + ' ' : '') + it.n : ok ? '—' : 'bloqueado (2 mãos)']),
-      it ? h('em', null, [rar.n + ' · T' + e.tier + (cards ? ' · ' + cards + ' carta(s)' : '') + ((e.gem || []).filter(Boolean).length ? ' · gema' : '')]) : null]);
+      it ? h('em', null, [E.EXTRA_SLOT[sl] ? (it.jl ? jlRarName(it, e.ref || 0) : E.EXTRA_SLOT[sl] === 'shadow' ? 'Sombrio' : 'Visual') : rar.n + ' · T' + e.tier + (cards ? ' · ' + cards + ' carta(s)' : '') + ((e.gem || []).filter(Boolean).length ? ' · gema' : '')]) : null]);
     var warn = sl === 'weapon' && it && it.w && Y.classById[b.cls].wp.indexOf(it.w) < 0;
     var bt = h('button', { class: 'eqs ' + side + (sl === selSlot ? ' sel' : '') + (it ? ' has' : '') + (ok ? '' : ' off') + (warn ? ' warnb' : ''),
       on: { click: function () { selSlot = sl; drawTab(); setTimeout(function () { var ed = $('#slotEd'); if (ed && ed.scrollIntoView) ed.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 20); },
-        dblclick: function () { if (ok) pickerModal(itemsFor(sl), 'Escolher ' + E.SLOT_NAMES[sl], function (x) { if (!x) return; b.eq[sl] = E.newEq(x.id); if (sl === 'weapon' && x.th) delete b.eq.shield; refresh(true); }, { icon: true }); } } },
+        dblclick: function () { if (ok) pickerModal(itemsFor(sl), 'Escolher ' + E.SLOT_NAMES[sl], function (x) { if (!x) return; b.eq[sl] = E.newEq(x.id); if (sl === 'weapon' && x.th) delete b.eq.shield; refresh(true); }, { icon: true, cli: E.EXTRA_SLOT[sl] ? true : undefined }); } } },
       side === 'l' ? [txt, ico] : [ico, txt]);
     if (it) tipOn(bt, function () { return itemTip(it, e); });
     return bt;
@@ -1030,6 +1034,14 @@
       h('span', null, [h('small', null, ['ASPD']), h('b', null, [fmt(R.aspdEff)])]),
       h('span', null, [h('small', null, ['Peso']), h('b', { class: R.weight > R.maxWeight ? 'bad' : '' }, [fmt(R.weight) + ' / ' + fmt(R.maxWeight)])])]));
     t.appendChild(win);
+    // equipamento sombrio e visual
+    var xw = h('div', { class: 'rowin eqwin eqx', style: '--lc:' + Y.lineColor(b.cls) }, [
+      h('div', { class: 'rotitle' }, [h('span', null, ['Sombrio e Visual']), h('span', { class: 'grow' }), h('small', null, ['equipamentos de Sombra e visuais (trajes)'])])]);
+    var xg = h('div', { class: 'eqxgrid' });
+    var cS = h('div', { class: 'eqcol' }, [h('div', { class: 'eqxh' }, ['Sombrio'])]), cV = h('div', { class: 'eqcol' }, [h('div', { class: 'eqxh' }, ['Visual'])]);
+    E.SHADOW.forEach(function (sl) { cS.appendChild(eqSlot(sl, 'r')); });
+    E.VISUAL.forEach(function (sl) { cV.appendChild(eqSlot(sl, 'r')); });
+    xg.appendChild(cS); xg.appendChild(cV); xw.appendChild(xg); t.appendChild(xw);
     var ed = slotEditor(selSlot); ed.id = 'slotEd'; t.appendChild(ed);
     t.appendChild(extraEditor());
   }
@@ -1053,6 +1065,8 @@
     opts = opts || {};
     var q = h('input', { placeholder: 'Buscar por nome…', style: 'width:100%' });
     var chk = h('input', { type: 'checkbox', checked: true });
+    var hasCli = list.some(function (it) { return it.cl && !it.cf; });
+    var cli = h('input', { type: 'checkbox', checked: opts.cli != null ? opts.cli : pickFilter.cli, on: { change: function () { if (opts.cli == null) pickFilter.cli = cli.checked; } } });
     var box = h('div', { class: 'list' });
     function fill() {
       box.innerHTML = '';
@@ -1061,21 +1075,43 @@
         if (n >= 80) return;
         if (s && it.n.toLowerCase().indexOf(s) < 0) return;
         if (chk.checked && opts.usable !== false && !usable(it)) return;
+        if (it.cl && !it.cf && !cli.checked) return;
         n++;
         var d = [];
         if (it.a) d.push('ATQ ' + it.a); if (it.ma) d.push('ATQM ' + it.ma); if (it.d) d.push('DEF ' + it.d); if (it.md) d.push('MDEF ' + it.md); if (it.sl) d.push('[' + it.sl + ']'); if (it.lv) d.push('Nv ' + it.lv);
         if (it.w) d.push(Y.weaponNames[it.w] || it.w);
-        var row = h('div', { class: 'it', on: { click: function () { onPick(it); closeModal(); } } }, [h('span', { class: 'mcell' }, [opts.mon ? h('span', { class: 'mbox' }, [mobImg(it.id)]) : h('span', { class: 'eqi sm' }, [itemIcon(it.id)]), h('span', null, [it.n])]), h('span', { class: 'mut' }, [d.join(' · ')])]);
+        var row = h('div', { class: 'it', on: { click: function () { onPick(it); closeModal(); } } }, [h('span', { class: 'mcell' }, [opts.mon ? h('span', { class: 'mbox' }, [mobImg(it.id)]) : h('span', { class: 'eqi sm' }, [itemIcon(it.id)]), h('span', null, [it.n]), cliTag(it)]), h('span', { class: 'mut' }, [d.join(' · ')])]);
         if (!opts.mon) tipOn(row, function () { return itemTip(it); });
         box.appendChild(row);
       });
       if (!n) box.appendChild(h('div', { class: 'it mut' }, ['Nenhum resultado']));
     }
-    q.addEventListener('input', fill); chk.addEventListener('change', fill); fill();
+    q.addEventListener('input', fill); chk.addEventListener('change', fill); cli.addEventListener('change', fill); fill();
     openModal(h('div', null, [h('h3', null, [title]), q,
       opts.usable === false ? null : h('label', { class: 'inl' }, [chk, 'Somente usáveis pela classe e nível atual']),
+      hasCli ? h('label', { class: 'inl', title: 'Itens que estão no cliente do jogo (jogo.yggidle.com.br) mas não na wiki. Podem não existir no servidor: cabe a você decidir.' }, [cli, 'Incluir itens que só estão no cliente do jogo (não confirmados na wiki)']) : null,
       box, h('div', { class: 'row' }, [h('button', { on: { click: closeModal } }, ['Cancelar']), opts.clear ? h('button', { on: { click: function () { onPick(null); closeModal(); } } }, ['Remover']) : null])]));
     setTimeout(function () { q.focus(); }, 30);
+  }
+  var JLR = ['Comum', 'Incomum', 'Rara', 'Épica'];
+  function jlRarName(it, ref) { return JLR[E.jlRarity(it, ref)] || 'Comum'; }
+  // editor das linhas aleatórias próprias de um item (ex.: Joia do Destino)
+  function jlEditor(c, e, it) {
+    var jr = E.jlRarity(it, e.ref || 0);
+    e.jlines = e.jlines || [];
+    c.appendChild(h('div', { class: 'tip' }, ['Raridade pelo refino: ' + JLR[jr] + ' (' + it.jr.map(function (r, i) { return JLR[i + 1] + ' no +' + r; }).join(', ') + '). Cada raridade libera 1 linha, e todas as linhas ficam com o valor da raridade atual.']));
+    for (var i = 0; i < it.jr.length; i++) (function (i) {
+      var on = i < jr;
+      var sel = h('select', { disabled: !on, on: { change: function (ev) { var v = ev.target.value; if (v === '') e.jlines.splice(i, 1); else e.jlines[i] = +v; refresh(true); } } });
+      sel.appendChild(h('option', { value: '' }, [on ? '— linha vazia —' : 'liberada no +' + it.jr[i]]));
+      var grp = {};
+      it.jl.forEach(function (J, ix) {
+        var used = e.jlines.indexOf(ix); if (used >= 0 && used !== i) return;
+        if (!grp[J.g]) { grp[J.g] = h('optgroup', { label: J.g }); sel.appendChild(grp[J.g]); }
+        grp[J.g].appendChild(h('option', { value: ix, selected: e.jlines[i] === ix }, [J.n + ' +' + J.v[Math.max(0, jr - 1)]]));
+      });
+      c.appendChild(h('div', { class: 'line' }, [h('span', { class: 'mut' }, ['Linha ' + (i + 1)]), sel]));
+    })(i);
   }
   function itemLabel(id) { var it = Y.itemById[id]; return it ? it.n : '—'; }
   function slotEditor(sl) {
@@ -1083,9 +1119,9 @@
     if (!slotAllowed(sl)) { c.appendChild(h('div', { class: 'mut' }, ['Escudo indisponível com arma de duas mãos.'])); return c; }
     var e = b.eq[sl], it = e && Y.itemById[e.id];
     c.appendChild(h('div', { class: 'row' }, [
-      h('button', { class: 'pri', on: { click: function () { pickerModal(itemsFor(sl), 'Escolher ' + E.SLOT_NAMES[sl], function (x) { if (!x) return; b.eq[sl] = E.newEq(x.id); if (sl === 'weapon' && x.th) delete b.eq.shield; refresh(true); }, { icon: true }); } } }, [it ? 'Trocar item' : 'Escolher item']),
+      h('button', { class: 'pri', on: { click: function () { pickerModal(itemsFor(sl), 'Escolher ' + E.SLOT_NAMES[sl], function (x) { if (!x) return; b.eq[sl] = E.newEq(x.id); if (sl === 'weapon' && x.th) delete b.eq.shield; refresh(true); }, { icon: true, cli: E.EXTRA_SLOT[sl] ? true : undefined }); } } }, [it ? 'Trocar item' : 'Escolher item']),
       it ? h('button', { on: { click: function () { delete b.eq[sl]; refresh(true); } } }, ['Remover']) : null,
-      it ? h('span', { class: 'eqi lg' }, [itemIcon(it.id)]) : null, it ? h('b', null, [it.n]) : null]));
+      it ? h('span', { class: 'eqi lg' }, [itemIcon(it.id)]) : null, it ? h('b', null, [it.n]) : null, it ? cliTag(it) : null]));
     if (!it) return c;
     // descrição
     var info = [];
@@ -1095,6 +1131,16 @@
       var txt = f.t || Object.keys(f.s || {}).map(function (k) { return lblKey(k) + ' ' + (f.s[k] > 0 ? '+' : '') + f.s[k]; }).join(', ');
       c.appendChild(h('div', { class: 'fx' }, [(f.c ? '(condicional) ' : '') + txt]));
     });
+    // sombrio / visual: só refino (sombrio) e linhas próprias do item
+    if (E.EXTRA_SLOT[sl]) {
+      if (E.EXTRA_SLOT[sl] === 'shadow') {
+        var mxr = it.jl ? 15 : 20, sr2 = h('select', { on: { change: function (ev) { e.ref = +ev.target.value; refresh(true); } } });
+        for (var r3 = 0; r3 <= mxr; r3++) sr2.appendChild(h('option', { value: r3, selected: r3 === e.ref }, ['+' + r3]));
+        c.appendChild(h('div', { class: 'row' }, [h('label', { class: 'inl' }, ['Refino ', sr2])]));
+      }
+      if (it.jl) jlEditor(c, e, it);
+      return c;
+    }
     // refino / raridade / tier
     var rowOpt = h('div', { class: 'row' });
     if (sl !== 'ammo') {
@@ -1106,7 +1152,9 @@
     Y.bonus.rarities.forEach(function (r2) { rs.appendChild(h('option', { value: r2.id, selected: r2.id === e.rar }, [r2.n])); });
     rowOpt.appendChild(h('label', { class: 'inl' }, ['Raridade ', rs]));
     var ts = h('select', { on: { change: function (ev) { e.tier = +ev.target.value; clampLines(e); refresh(true); } } });
-    [1, 2, 3, 4, 5].forEach(function (n) { ts.appendChild(h('option', { value: n, selected: n === e.tier }, ['Tier ' + n + ' (×' + Y.bonus.tierMult[n] + ')'])); });
+    if (e.tier > 4) e.tier = 4; // T5 ainda não existe no YggIdle
+    [1, 2, 3, 4].forEach(function (n) { ts.appendChild(h('option', { value: n, selected: n === e.tier }, ['Tier ' + n + ' (×' + String(Y.bonus.tierMult[n]).replace('.', ',') + ')'])); });
+    ts.appendChild(h('option', { value: 5, disabled: true }, ['Tier 5 · ainda não existe no YggIdle']));
     rowOpt.appendChild(h('label', { class: 'inl' }, ['Mapa ', ts]));
     c.appendChild(rowOpt);
     // linhas

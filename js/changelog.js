@@ -4,6 +4,27 @@
 window.YGG = window.YGG || {};
 YGG.changelog = [
   {
+    v: '0.2.3', d: '2026-11-24', t: 'Bônus aleatórios, Sombrio/Visual e itens do cliente',
+    g: [
+      ['Bônus aleatórios', [
+        'Faixas de todos os bônus refeitas com os valores base do servidor do YggIdle. Antes o planner usava como base o valor que a wiki mostra para o Tier 4 e ainda multiplicava pelo tier, e os números passavam do limite do jogo. Exemplo: Ataque numa armadura Épica no Tier 4 ia até 91; agora vai de 19 a 38, como no jogo.',
+        'Valor final = base da raridade × multiplicador do tier do mapa (T1 ×1, T2 ×2, T3 ×2,2, T4 ×2,4), arredondado. Builds salvas têm os bônus trazidos para dentro da faixa correta sozinhos.',
+        'Precisão Perfeita passa a crescer com o tier do mapa, como no servidor.',
+        'Tier 5 desabilitado no seletor (ainda não existe no YggIdle); equipamentos salvos em T5 passam para T4.'
+      ]],
+      ['Sombrio e Visual', [
+        'Janela nova “Sombrio e Visual” na aba Equipamentos: 6 slots de equipamento sombrio (arma, escudo, armadura, calçado e dois acessórios) e 4 visuais (topo, meio, baixo e capa).',
+        'Joia do Destino (Sombra · escudo) com refino até +15, bônus por refino (+7, +10, +12, +15) e bônus aleatórios próprios: a raridade sobe com o refino (Incomum no +10, Rara no +12, Épica no +15), cada raridade libera 1 linha e todas as linhas ficam com o valor da raridade atual.',
+        'Conjunto Batina Angelical + Joia do Destino funcionando: bônus do conjunto e o bônus extra quando a soma dos refinos da Batina e da Joia chega a 30.'
+      ]],
+      ['Itens', [
+        'Descrição do equipamento mais clara e um pouco maior no tooltip, para ler melhor.',
+        '6.920 equipamentos e cartas do cliente do jogo que faltavam na wiki, entre eles as Batinas Angelicais (FOR, AGI, VIT, DES, INT e SOR), a Joia do Destino, equipamentos sombrios e visuais.',
+        'Itens próprios do YggIdle lidos do cliente aparecem sempre, com a etiqueta verde “YggIdle · cliente”. Os que só estão no cliente (podem não existir no servidor) ficam com a etiqueta “só no cliente” e só aparecem marcando “Incluir itens que só estão no cliente do jogo” no seletor; nos slots Sombrio e Visual essa opção já vem marcada.'
+      ]]
+    ]
+  },
+  {
     v: '0.2.2', d: '2026-11-24', t: 'Hotfix dos pontos de atributo',
     g: [
       ['Atributos', ['Pontos de atributo iguais aos do YggIdle: o total por nível segue a tabela do servidor do jogo (3.330 pontos no nível 175 para as classes T, conferido num personagem real), e o custo para subir um atributo acima de 100 ficou certo (ex.: de 109 para 110 custa 20 pontos, e não 12).']]
