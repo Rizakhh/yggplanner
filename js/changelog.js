@@ -4,6 +4,17 @@
 window.YGG = window.YGG || {};
 YGG.changelog = [
   {
+    v: '0.2.10', d: '2026-11-25', t: 'Simulação: redução de dano e elemento da arma',
+    g: [
+      ['Simulação', [
+        'A redução de dano recebido agora entra na simulação: Chefes (Miniboss e MVP), Monstros, Física, Caos e Matilha. Antes só valia a de monstros comuns, e contra chefes nenhuma.',
+        'O Def. crítico do jogador não reduz mais o crítico dele mesmo; a tabela “Dano esperado” e o Resultado agora batem.',
+        'O ataque básico de builds à distância passa a usar o bônus de dano à distância, não o de corpo a corpo.',
+        'Novo campo “Elemento da arma” no cenário (arma elemental, Endow): vale para o ataque básico e habilidades sem elemento próprio.'
+      ]]
+    ]
+  },
+  {
     v: '0.2.9-hf1', d: '2026-11-25', t: 'Condições escritas por extenso e acessórios de um lado só',
     g: [
       ['Equipamentos', [

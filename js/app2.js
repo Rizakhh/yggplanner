@@ -1782,6 +1782,7 @@
       h('label', { class: 'inl' }, ['Duração máx. (s) ', h('input', { class: 'num', type: 'number', value: S.maxT, on: { change: function (e) { S.maxT = Math.max(5, +e.target.value || 120); save(); } } })]),
       h('label', { class: 'inl' }, ['Intervalo de ataque do monstro (s) ', h('input', { class: 'num', type: 'number', step: 0.1, value: S.mobDelay, on: { change: function (e) { S.mobDelay = Math.max(0.2, +e.target.value || 1.5); save(); } } })]),
       h('label', { class: 'inl' }, ['Elemento do ataque ', (function () { var s = h('select', { on: { change: function (e) { S.mobEle = e.target.value; save(); } } }); ['auto'].concat(Y.bonus.eles).forEach(function (x) { s.appendChild(h('option', { value: x, selected: x === S.mobEle }, [x === 'auto' ? 'do monstro' : x])); }); return s; })()]),
+      h('label', { class: 'inl', title: 'Elemento do ataque básico e das habilidades sem elemento próprio (arma elemental, Endow)' }, ['Elemento da arma ', (function () { var s = h('select', { on: { change: function (e) { S.weaponEle = e.target.value; refresh(true); } } }); Y.bonus.eles.forEach(function (x) { s.appendChild(h('option', { value: x, selected: x === (S.weaponEle || 'Neutro') }, [x])); }); return s; })()]),
       h('label', { class: 'inl' }, ['Regen HP/s ', h('input', { class: 'num', type: 'number', value: S.healPs, on: { change: function (e) { S.healPs = +e.target.value || 0; save(); } } })]),
       h('label', { class: 'inl' }, ['Regen SP/s ', h('input', { class: 'num', type: 'number', step: 0.5, value: S.spRegen, on: { change: function (e) { S.spRegen = +e.target.value || 0; save(); } } })])]));
     if (mon) {
@@ -1822,7 +1823,7 @@
     var runs = Math.min(S.runs, 200), res = [];
     [0, 1, 2].forEach(function (i) {
       var bb = stageBuild(i); if (!bb) return; var rr = stageR(i);
-      var cfg = { mon: mon, n: S.n, rot: S.rot, farm: S.farm, maxT: S.maxT, mobDelay: S.mobDelay, mobEle: S.mobEle, healPs: S.healPs, spRegen: S.spRegen, seed: 12345, critDef: rr.B.critDef || 0 };
+      var cfg = { mon: mon, n: S.n, rot: S.rot, farm: S.farm, maxT: S.maxT, mobDelay: S.mobDelay, mobEle: S.mobEle, weaponEle: S.weaponEle || 'Neutro', healPs: S.healPs, spRegen: S.spRegen, seed: 12345 };
       var one = D.simulate(rr, bb, cfg, false), mc = D.monteCarlo(rr, bb, cfg, runs);
       res.push({ i: i, lv: bb.lv, one: one, mc: mc });
     });
@@ -1840,7 +1841,7 @@
   }
   function runSim(host) {
     var S = b.sim, mon = Y.monById[S.mon]; if (!mon) return;
-    var cfg = { mon: mon, n: S.n, rot: S.rot, farm: S.farm, maxT: S.maxT, mobDelay: S.mobDelay, mobEle: S.mobEle, healPs: S.healPs, spRegen: S.spRegen, seed: 12345, critDef: R.B.critDef || 0 };
+    var cfg = { mon: mon, n: S.n, rot: S.rot, farm: S.farm, maxT: S.maxT, mobDelay: S.mobDelay, mobEle: S.mobEle, weaponEle: S.weaponEle || 'Neutro', healPs: S.healPs, spRegen: S.spRegen, seed: 12345 };
     var one = D.simulate(R, b, cfg, true);
     var mc = D.monteCarlo(R, b, cfg, S.runs);
     simRes = { one: one, mc: mc, cfg: cfg };

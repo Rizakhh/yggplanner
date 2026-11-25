@@ -89,7 +89,7 @@
       res.hitCh = 1; res.critCh = 0; res.critAvg = dmg;
     } else {
       var P = D.physPer(R, b, mon);
-      var ranged = s ? s.r === 'r' : R.ranged;
+      var ranged = s && s.id !== 'basic' ? s.r === 'r' : R.ranged;
       var def = Math.max(0, mon.def * (1 - Math.min(100, (B['ignDef:' + (isBoss ? 'Boss' : 'Normal')] || 0) + (B['ignDef:all'] || 0)) / 100));
       var cf2 = D.cardfix(R, 'Phys', mon, ranged, isBoss, atkEle);
       var stAtk = R.batk * 2;
@@ -183,8 +183,9 @@
     var eleRes = (B['resEle:' + ele] || 0) + (B['resEle:all'] || 0);
     var sizeRes = (B['resSize:' + (b.opt.playerSize || 'Médio')] || 0);
     var raceRes = (B['resRace:' + mon.race] || 0);
-    var normRes = mon.cls >= 1 ? 0 : (B.resNormal || 0);
-    d *= Math.max(0, 1 - (eleRes + raceRes + normRes) / 100);
+    var normRes = mon.cls >= 1 ? (B.resBoss || 0) : (B.resNormal || 0);
+    var z = D.zoneOf(b), extra = (B.resMonster || 0) + (B.resPhys || 0) + (z.caos ? (B.resCaos || 0) : 0) + ((o.n || 1) > 1 ? (B.resPack || 0) : 0);
+    d *= Math.max(0, 1 - (eleRes + raceRes + normRes + extra) / 100);
     d = Math.max(1, Math.floor(d));
     var hit = mon.lv + mon.dex + 150;
     var rate = Math.min(95, Math.max(5, 80 + hit - R.flee)) / 100;
