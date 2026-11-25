@@ -29,6 +29,12 @@ window.YGG = window.YGG || {};
     4494: { fx: [{ c: null, s: { dmgPhys: 10 } }, { c: { r: 15 }, s: { dmgPhys: 5 } }, proc('1,5% de chance de autoconjurar [Impacto Explosivo] nv. 10.')] },
     // Carta Geodoliant: só no Acessório Direito; 7% de Onda Psíquica nv. 2 (conjunto com Ungoliant igual)
     300006: { only: 'accR', fx: [proc('7% de chance de autoconjurar [Onda Psíquica] nv. 2.'), { c: { set: [['Carta Ungoliant']] }, s: { 'dmgEle:Neutro:Magic': 30 } }] },
+    // Faísca Pigritia: como no cliente (ATQM 180, Odaliscas e evoluções, proc só no +13, ignora DEFM e não DEF)
+    580005: { ma: 180, j: 'Odaliscas e evoluções', fx: [{ c: { every: 2 }, s: { matk: 10 } }, { c: { every: 3 }, s: { dmgMagic: 5 } },
+      { c: { every: 5 }, s: { 'skill:Ressonância': 20 } }, { c: { r: 7 }, s: { aspdPct: 10 } }, { c: { r: 9 }, s: { 'dmgSize:all:Magic': 15 } },
+      { c: { r: 11 }, s: { afterCast: -10 } }, { c: { r: 11 }, t: 'Habilita [Ressonância] nv. 5.' },
+      { c: { proc: 'Refino +13 ou mais, ao realizar ataques mágicos' }, t: '10% de chance de conjurar [Amplificação Mística] nv. 10 em você (ATQM +50% por 60 segundos).' },
+      { c: { r: 15 }, s: { 'skill:Ressonância': 20 } }, { c: { r: 15 }, s: { 'ignMdef:all': 20 } }] },
     // Carta General das Almas: descrição corrigida
     1280217: { fx: [{ c: { proc: 'Ao usar Kaupe' }, t: '10% de chance de dano mágico +20% por 5 segundos.' }] },
     // Carta Ascensão de LHZ: RES, MRES e Talentos só no Inferno

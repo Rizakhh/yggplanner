@@ -4,6 +4,22 @@
 window.YGG = window.YGG || {};
 YGG.changelog = [
   {
+    v: '0.2.11-hf2', d: '2026-11-25', t: 'Habilidades concedidas na simulação',
+    g: [
+      ['Simulação', [
+        'Ressonância (Faísca Pigritia) agora entra na rotação, com 1.000% a 2.200% do ATQM multiplicado pelo nível de base, em área.',
+        'Outras 22 habilidades concedidas por equipamentos ou pela Árvore do Caos ganharam modelo de dano e também entram na rotação: Meteoro Escarlate, Onda Psíquica, Corrente Elétrica, Luz da Criação, Eswhoo, Brisa Cortante, Congelamento, Esfera d’Água, Lâminas Retalhadoras, Ofensiva Fatal, Esporo Explosivo, Lançar Míssil, Disparo de Esferas Espirituais, Chute Aéreo, Arremessar Tomahawk, Passo Sombrio, Sombra do Templário, Tornado de Carrinho, Planta Infernal, Trindade, Rush Strike e Triple Laser.',
+        'Habilidades das árvores que não tinham modelo agora estão na simulação da própria classe: Congelamento e Esfera d’Água (Bruxo), Brisa Cortante (Ninja), Chute Aéreo (Taekwon).',
+        'Bônus de equipamento “Dano de [habilidade] +X%” passam a contar no dano simulado de todas as habilidades (antes só apareciam na ficha).',
+        'Habilidades cujo dano depende do nível de base (Ressonância, Meteoro Escarlate, Lâminas Retalhadoras...) agora levam isso em conta.',
+        'Habilidades concedidas que não causam dano (Teleporte, Furto, buffs, recalls...) seguem só na aba Extra.'
+      ]],
+      ['Equipamentos', [
+        'Faísca Pigritia corrigida pelo cliente do jogo: ATQM 180, “Odaliscas e evoluções”, Amplificação Mística só no refino +13, “Dano mágico de todas as propriedades +5%” e “Ignora 20% da DEFM” (antes contava como DEF física).'
+      ]]
+    ]
+  },
+  {
     v: '0.2.11-hf1', d: '2026-11-25', t: 'Filtro de classe dos equipamentos',
     g: [
       ['Equipamentos', [

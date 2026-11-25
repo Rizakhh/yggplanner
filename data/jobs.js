@@ -73,7 +73,7 @@ window.YGG = window.YGG || {};
   M('judex', 'Judex', 5, lin(900, 420), { a: 25, e: 'Sagrado', sp: [30, 0], spl: [20, 23, 26, 29, 42], c: [2, 0] });
   // Adoramus: só por item/Ascensão; SP do YggIdle 8 a 35
   M('adoramus', 'Adoramus', 10, lin(300, 250), { h: 1, a: 49, e: 'Sagrado', sp: [5, 3], c: [1.5, 0], d: 2 });
-  P('fingeroff', 'Ataque Rápido do Dedo (Finger Offensive)', 5, lin(150, 50), { h: 5, r: 'r', sp: [10, 0], w: ['Fist', 'Knuckle'] });
+  P('fingeroff', 'Ataque Rápido do Dedo (Finger Offensive)', 5, lin(150, 50), { ae: 'MO_FINGEROFFENSIVE', h: 5, r: 'r', sp: [10, 0], w: ['Fist', 'Knuckle'] });
   P('investigate', 'Investigar (Investigate)', 5, lin(100, 100), { e: '', sp: [10, 0], w: ['Fist', 'Knuckle'], di: 1 });
   P('tigerfist', 'Punho de Tigre (Tiger Knuckle)', 5, lin(100, 100), { h: 2, w: ['Fist', 'Knuckle'], sp: [15, 0] });
   P('cp', 'Golpe de Esfera (Asura Strike)', 5, lin(800, 0), { e: '', sp: [200, 0], c: [3, 0], d: 3.5, asura: 1, cd: 0 });
@@ -137,6 +137,32 @@ window.YGG = window.YGG || {};
   // ---- Aprendiz
   B('firstaid', 'Primeiros Socorros (First Aid)', 1, function () { return {}; });
 
+  // ---- Concedidas por equipamentos ou pela Árvore do Caos (não são da árvore de nenhuma classe do planner)
+  // ae = nome AEGIS (liga ao item que concede); bl = dano × nível de base / 100; si = +% de ATQM/ATQ por ponto de INT.
+  // Fórmulas da descrição do YggIdle/cliente; onde ela não dá o número, rAthena Renewal.
+  M('reverb', 'Ressonância (Reverberation)', 5, lin(700, 300), { ae: 'WM_REVERBERATION', a: 9, bl: 1, e: '', w: ['Whip', 'Musical'], sp: [24, 4], c: [1, 0], d: 1 });
+  M('crimson', 'Meteoro Escarlate (Crimson Rock)', 5, lin(700, 600), { ae: 'WL_CRIMSONROCK', a: 9, bl: 1, e: 'Fogo', sp: [50, 10], c: [3, 0], fc: 0.5, d: 0.5, cd: 5 });
+  M('pwave', 'Onda Psíquica (Psychic Wave)', 5, lin(0, 70), { ae: 'SO_PSYCHIC_WAVE', a: 9, bl: 1, si: 3, hl: 'pwave', e: 'Neutro', sp: [44, 4], c: [6.5, -0.5], fc: 1, d: 1, cd: 5 });
+  M('chainlight', 'Corrente Elétrica (Chain Lightning)', 5, lin(500, 100), { ae: 'WL_CHAINLIGHTNING', a: 9, bl: 1, e: 'Vento', sp: [70, 10], c: [3.5, 0.5], fc: 1, d: 1, cd: 3 });
+  M('genesis', 'Luz da Criação (Ray of Genesis)', 10, lin(0, 350), { ae: 'LG_RAYOFGENESIS', a: 25, e: 'Sagrado', sp: [55, 5], c: [2, 0], fc: 0.5, d: 2, cd: 2 });
+  M('swhoo', 'Eswhoo', 10, lin(1500, 200), { ae: 'SP_SWHOO', a: 9, bl: 1, e: 'Neutro', sp: [120, 0], c: [2, 0], d: 0.5, cd: 0.5 });
+  M('kamaitachi', 'Brisa Cortante (Kamaitachi)', 7, lin(2000, 0), { ae: 'NJ_KAMAITACHI', a: 3, e: 'Neutro', sp: [25, 0], c: [1.2, 0], fc: 0.3, d: 1 });
+  M('frostnova', 'Congelamento (Frost Nova)', 10, lin(66.7, 6.7), { ae: 'WZ_FROSTNOVA', a: 9, e: 'Água', sp: [47, -2], c: [6, -0.4], d: 1 });
+  M('waterball', "Esfera d'Água (Water Ball)", 5, lin(100, 30), { ae: 'WZ_WATERBALL', hl: 'wball', e: 'Água', sp: [15, 5], c: [1, 1], d: 0.5 });
+  P('crossimp', 'Lâminas Retalhadoras (Cross Impact)', 5, lin(1400, 150), { ae: 'GC_CROSSIMPACT', h: 7, bl: 1, w: ['Katar'], sp: [25, 0], d: 1, cd: 1, cr: 1 });
+  P('fatalmenace', 'Ofensiva Fatal (Fatal Menace)', 10, lin(0, 120), { ae: 'SC_FATALMENACE', a: 9, bl: 1, sp: [19, 1], d: 0.5 });
+  P('sporeexp', 'Esporo Explosivo (Spore Explosion)', 10, lin(400, 200), { ae: 'GN_SPORE_EXPLOSION', a: 9, bl: 1, r: 'r', e: 'Neutro', sp: [55, 5], c: [1.5, 0], fc: 0.5, d: 1, cd: 0.5 });
+  P('dtail', 'Lançar Míssil (Dragon Tail)', 10, lin(500, 200), { ae: 'RL_D_TAIL', a: 9, r: 'r', w: ['Grenade'], sp: [50, 5], c: [1, 0], fc: 0.5, d: 1, cd: 2 });
+  P('jumpkick', 'Chute Aéreo (Flying Side Kick)', 7, lin(30, 10), { ae: 'TK_JUMPKICK', r: 'm', sp: [80, -10], d: 0.5 });
+  P('tomahawk', 'Arremessar Tomahawk (Throw Tomahawk)', 1, lin(100, 0), { ae: 'ITM_TOMAHAWK', r: 'r', e: 'Vento', sp: [0, 0] });
+  P('darkillu', 'Passo Sombrio (Dark Illusion)', 5, lin(100, 0), { ae: 'GC_DARKILLUSION', r: 'r', sp: [10, 0], d: 1, cd: 1 });
+  P('sombrapa', 'Sombra do Templário', 5, lin(1300, 0), { ae: 'MIDGARD_SOMBRA_PA', h: 3, r: 'r', sp: [40, 0], c: [0.6, 0], d: 0.8, cd: 1 });
+  P('carttornado', 'Tornado de Carrinho (Cart Tornado)', 10, lin(0, 200), { ae: 'GN_CART_TORNADO', a: 9, bl: 1, sp: [30, 0], d: 0.5, cd: 0.5 });
+  P('hellsplant', 'Planta Infernal (Hell\'s Plant)', 5, lin(0, 100), { ae: 'GN_HELLS_PLANT', a: 9, bl: 1, e: 'Neutro', sp: [40, 0], d: 1 });
+  P('hesperus', 'Trindade (Hesperus Lit)', 5, lin(0, 300), { ae: 'LG_HESPERUSLIT', bl: 1, w: ['1hSpear', '2hSpear'], sp: [80, 0], d: 0.5, cd: 3 });
+  P('rushstrike', 'Rush Strike', 5, lin(0, 12250), { ae: 'MT_RUSH_STRIKE', h: 7, a: 9, bl: 1, w: ['2hAxe'], sp: [60, 0], d: 1, cd: 1 });
+  P('triplelaser', 'Triple Laser', 5, lin(1950, 3450), { ae: 'MT_TRIPLE_LASER', h: 3, r: 'r', bl: 1, cr: 1, sp: [60, 0], c: [1, 0], fc: 0.5, d: 0.25, cd: 0.35 });
+
   YGG.skills = S;
   var all = function (a) { return a; };
   var Wall = ['Fist', 'Dagger', '1hSword', '2hSword', '1hSpear', '2hSpear', '1hAxe', '2hAxe', 'Mace', '2hMace', 'Staff', '2hStaff', 'Bow', 'Knuckle', 'Musical', 'Whip', 'Book', 'Katar', 'Revolver', 'Rifle', 'Gatling', 'Shotgun', 'Grenade', 'Huuma'];
@@ -153,7 +179,7 @@ window.YGG = window.YGG || {};
     { id: 'pal', n: 'Paladino', line: 'Espadachim', tier: 3, rj: 'Paladin', parent: 'cru', wp: ['Fist', 'Dagger', '1hSword', '1hSpear', '2hSpear', '1hAxe', 'Mace'], items: ['Aprendiz', 'Espadachim', 'Cruzado', 'Paladino'], sk: ['overbrand'] },
     // Mago
     { id: 'mag', n: 'Mago', line: 'Mago', tier: 1, rj: 'Mage', parent: 'nov', wp: ['Fist', 'Dagger', 'Staff', '2hStaff'], items: ['Aprendiz', 'Mago'], sk: ['firebolt', 'coldbolt', 'lightning', 'soulstrike', 'napalm', 'firewall', 'thunderstorm', 'frostdiver', 'fireball'] },
-    { id: 'wiz', n: 'Bruxo', line: 'Mago', tier: 2, rj: 'Wizard', parent: 'mag', wp: ['Fist', 'Dagger', 'Staff', '2hStaff'], items: ['Aprendiz', 'Mago', 'Feiticeiro'], sk: ['lov', 'stormgust', 'jt', 'firebolt2', 'wom'] },
+    { id: 'wiz', n: 'Bruxo', line: 'Mago', tier: 2, rj: 'Wizard', parent: 'mag', wp: ['Fist', 'Dagger', 'Staff', '2hStaff'], items: ['Aprendiz', 'Mago', 'Feiticeiro'], sk: ['lov', 'stormgust', 'jt', 'firebolt2', 'wom', 'frostnova', 'waterball'] },
     { id: 'hwz', n: 'Arquimago', line: 'Mago', tier: 3, rj: 'High_Wizard', parent: 'wiz', wp: ['Fist', 'Dagger', 'Staff', '2hStaff'], items: ['Aprendiz', 'Mago', 'Feiticeiro', 'Arquimago'], sk: ['amp'] },
     { id: 'sag', n: 'Sábio', line: 'Mago', tier: 2, rj: 'Sage', parent: 'mag', wp: ['Fist', 'Dagger', 'Staff', '2hStaff', '1hSword', 'Book'], items: ['Aprendiz', 'Mago', 'Sábio'], sk: ['hwind', 'amp'] },
     { id: 'pro', n: 'Professor', line: 'Mago', tier: 3, rj: 'Professor', parent: 'sag', wp: ['Fist', 'Dagger', 'Staff', '2hStaff', '1hSword', 'Book'], items: ['Aprendiz', 'Mago', 'Sábio', 'Professor'], sk: ['magicnuke', 'soulburn'] },
@@ -185,8 +211,8 @@ window.YGG = window.YGG || {};
     { id: 'sta', n: 'Desordeiro', line: 'Gatuno', tier: 3, rj: 'Stalker', parent: 'rog', wp: ['Fist', 'Dagger', '1hSword', 'Bow'], items: ['Aprendiz', 'Ladrão', 'Vigarista', 'Desordeiro'], sk: ['raid'] },
     // Outros
     { id: 'gun', n: 'Justiceiro', line: 'Justiceiro', tier: 1, rj: 'Gunslinger', parent: 'nov', wp: ['Fist', 'Revolver', 'Rifle', 'Gatling', 'Shotgun', 'Grenade'], items: ['Aprendiz', 'Pistoleiro', 'Rebelião', 'Justiceiro'], sk: ['triple', 'fullblast', 'desperado', 'crowdfire', 'spread', 'tracking', 'grenade', 'madness'] },
-    { id: 'nin', n: 'Ninja', line: 'Ninja', tier: 1, rj: 'Ninja', parent: 'nov', wp: ['Fist', 'Dagger', 'Huuma'], items: ['Aprendiz', 'Ninja'], sk: ['kunai', 'katon', 'hyou', 'windblade', 'dragonfire', 'throwshuriken', 'huuma', 'ninjaclose'] },
-    { id: 'tae', n: 'Taekwon', line: 'Taekwon', tier: 1, rj: 'Taekwon', parent: 'nov', wp: ['Fist'], items: ['Aprendiz', 'Taekwon'], sk: ['tornado', 'dodge', 'heel', 'counter'] },
+    { id: 'nin', n: 'Ninja', line: 'Ninja', tier: 1, rj: 'Ninja', parent: 'nov', wp: ['Fist', 'Dagger', 'Huuma'], items: ['Aprendiz', 'Ninja'], sk: ['kunai', 'katon', 'hyou', 'windblade', 'dragonfire', 'throwshuriken', 'huuma', 'ninjaclose', 'kamaitachi'] },
+    { id: 'tae', n: 'Taekwon', line: 'Taekwon', tier: 1, rj: 'Taekwon', parent: 'nov', wp: ['Fist'], items: ['Aprendiz', 'Taekwon'], sk: ['tornado', 'dodge', 'heel', 'counter', 'jumpkick'] },
     { id: 'sg', n: 'Mestre Taekwon', line: 'Taekwon', tier: 2, rj: 'Star_Gladiator', parent: 'tae', wp: ['Fist'], items: ['Aprendiz', 'Taekwon', 'Mestre Taekwon'], sk: ['stargaze'] },
     { id: 'sl', n: 'Espiritualista', line: 'Taekwon', tier: 2, rj: 'Soul_Linker', parent: 'tae', wp: ['Fist', 'Dagger', '1hSword', '1hSpear', 'Staff', '2hStaff'], items: ['Aprendiz', 'Taekwon', 'Espiritualista'], sk: ['soullinker', 'kaupe'] }
   ];

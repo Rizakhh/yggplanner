@@ -6,10 +6,14 @@
   var D = {};
 
   function skillRatio(s, lv) { return s.m[0] + s.m[1] * lv; }
-  function hitsOf(s, lv) {
+  function hitsOf(s, lv, R) {
     if (!s.hl) return s.h || 1;
     switch (s.hl) {
       case 'lv': return lv;
+      // Onda Psíquica: nível + 2 ondas, o dobro com Livro ou Cajado
+      case 'pwave': return (lv + 2) * (R && /Book|Staff/.test(R.wtype || '') ? 2 : 1);
+      // Esfera d'Água: 1, 1, 9, 9, 25 golpes (com água em volta)
+      case 'wball': return [1, 1, 9, 9, 25][Math.max(1, Math.min(5, lv)) - 1];
       case 'half': return Math.ceil(lv / 2);
       case 'lv4': return 4;
       case 'meteor': return Math.ceil(lv / 2) + 2;
@@ -64,6 +68,27 @@
     return (1 + gen / 100) * (1 + race / 100) * (1 + ele / 100) * (1 + cls / 100) * (1 + size / 100) * (1 + atkele / 100);
   };
 
+  // bônus de equipamento "Dano de [habilidade] +X%" (chave skill:<nome>): pelo nome do simulador, da árvore ou do cliente
+  function skillBonus(R, s) {
+    if (!s || !s.n || !R || !R.B) return 0;
+    var low = function (x) { return String(x || '').toLowerCase().trim(); };
+    var nm = {}; nm[low(s.n.replace(/\s*\(.*\)\s*$/, ''))] = 1;
+    if (s.ae) { if (Y.sk2 && Y.sk2[s.ae]) nm[low(Y.sk2[s.ae].n)] = 1; if (Y.skn && Y.skn[s.ae]) nm[low(Y.skn[s.ae])] = 1; }
+    var v = 0; Object.keys(R.B).forEach(function (k) { if (k.indexOf('skill:') === 0 && nm[low(k.slice(6))]) v += R.B[k] || 0; });
+    return v;
+  }
+  D.skillBonus = skillBonus;
+  // % final da habilidade: base + INT, × nível de base / 100 e × bônus "Dano de [habilidade]"
+  function ratioFull(R, s, lv) {
+    var r = skillRatio(s, lv);
+    if (!R) return r;
+    if (s.si) r += s.si * (R.int || 0);
+    if (s.bl) r *= (R.lv || 100) / 100;
+    var bn = skillBonus(R, s); if (bn) r *= 1 + bn / 100;
+    return r;
+  }
+  D.ratioFull = ratioFull;
+
   // estatística de um uso de habilidade/ataque contra um monstro
   // retorna {hits, hitCh, critCh, min, max, avg (dano médio por golpe incluindo crítico), perCast, ...}
   D.skillDamage = function (R, b, s, lv, mon, o) {
@@ -72,9 +97,9 @@
     var atkEle = s && s.e ? s.e : (o.weaponEle || 'Neutro');
     var tbl = mon.tbl || {};
     var eleMult = (tbl[atkEle] != null ? tbl[atkEle] : 100) / 100;
-    var hits = s ? hitsOf(s, lv) : 1;
+    var hits = s ? hitsOf(s, lv, R) : 1;
     var isMagic = s && s.k === 'm';
-    var ratio = s ? skillRatio(s, lv) : 100;
+    var ratio = s ? ratioFull(R, s, lv) : 100;
     var perHitRatio = s && s.hl ? ratio : ratio / hits;
     var res = { hits: hits, isMagic: isMagic, atkEle: atkEle, eleMult: eleMult, ratio: ratio };
     if (isMagic) {

@@ -64,7 +64,9 @@
     if (!Y.sk2) return;
     var byPt = {}, byEn = {};
     Object.keys(Y.sk2).forEach(function (a) { var s = Y.sk2[a]; byPt[s.n.toLowerCase()] = byPt[s.n.toLowerCase()] || a; if (s.en) byEn[s.en.toLowerCase()] = byEn[s.en.toLowerCase()] || a; });
+    Object.keys(Y.skills).forEach(function (id) { var x = Y.skills[id].ae; if (x) { SKA[id] = x; AKS[x] = id; } });
     Object.keys(Y.skills).forEach(function (id) {
+      if (SKA[id]) return;
       var n = Y.skills[id].n, m = n.match(/^(.*?)\s*\((.*)\)\s*$/), pt = (m ? m[1] : n).toLowerCase(), en = m ? m[2].toLowerCase() : '';
       var a = byEn[en] || byPt[pt] || byEn[pt]; if (a) { SKA[id] = a; if (!AKS[a]) AKS[a] = id; }
     });
@@ -1721,7 +1723,7 @@
       if (SKA[s.id]) skTip(nm, SKA[s.id], lv, s.max);
       tb.appendChild(h('tr', null, [h('td', null, [nm]),
         h('td', null, [h('input', { type: 'number', class: 'num', min: 1, max: s.max, value: lv, style: 'width:56px', on: { change: function (e) { b.skills[s.id] = Math.max(1, Math.min(s.max, +e.target.value || 1)); refresh(true); } } })]),
-        h('td', null, [s.k === 'm' ? 'Mágica' : 'Física']), h('td', null, [fmt(D.ratio(s, lv)) + '%']), h('td', null, [D.hitsOf(s, lv)]), h('td', null, [D.costOf(s, lv)]), h('td', null, [fmt(tm.cycle, 2)])]));
+        h('td', null, [s.k === 'm' ? 'Mágica' : 'Física']), h('td', null, [fmt(D.ratioFull(R, s, lv)) + '%']), h('td', null, [D.hitsOf(s, lv, R)]), h('td', null, [D.costOf(s, lv)]), h('td', null, [fmt(tm.cycle, 2)])]));
     });
     c2.appendChild(tb); t.appendChild(c2);
   }
@@ -2079,7 +2081,7 @@
     if (dd.rg) ficha.push(['Alcance', cleanUnit(dd.rg)]);
     if (ss && ss.k !== 'b') {
       var lvS = Math.min(ss.max, L);
-      ficha.push(['Fórmula (Nv ' + lvS + ')', fmt(D.ratio(ss, lvS)) + '% do ' + (ss.k === 'm' ? 'ATQM' : 'ATQ') + ' · ' + D.hitsOf(ss, lvS) + ' golpe(s)' + (ss.e ? ' · ' + ss.e : '') + (ss.a > 1 ? ' · área' : '')]);
+      ficha.push(['Fórmula (Nv ' + lvS + ')', fmt(D.ratioFull(R, ss, lvS)) + '% do ' + (ss.k === 'm' ? 'ATQM' : 'ATQ') + ' · ' + D.hitsOf(ss, lvS, R) + ' golpe(s)' + (ss.e ? ' · ' + ss.e : '') + (ss.a > 1 ? ' · área' : '')]);
       if (R) { var tm = D.timing(R, ss, lvS); ficha.push(['Tempo de uso', fmt(tm.cast, 2) + ' s conj. · ciclo ' + fmt(tm.cycle, 2) + ' s' + (tm.cd ? ' · recarga ' + fmt(tm.cd, 1) + ' s' : '')]); }
     }
     if (ficha.length) kids.push(h('div', { class: 'tfic' }, ficha.map(function (f) { return h('span', null, [h('small', null, [f[0]]), h('b', null, [f[1]])]); })));
