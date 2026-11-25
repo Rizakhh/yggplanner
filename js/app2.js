@@ -129,7 +129,9 @@
     o.sim = Object.assign({ mon: null, n: 1, farm: false, maxT: 120, mobDelay: 1.5, mobEle: 'Neutro', healPs: 0, spRegen: 1, rot: [], runs: 100 }, o.sim || {});
     o.tree = o.tree || {}; o.guides = o.guides || {}; o.sex = o.sex === 'f' ? 'f' : 'm';
     o.caos = Object.assign({ n: {}, side: 'yang', fury: 0 }, o.caos || {}); o.caos.n = o.caos.n || {}; o.caos.jw = o.caos.jw || [];
-    o.cons = o.cons || []; o.xsk = o.xsk || {}; if (!o.opt.zone2) o.opt.zone2 = o.opt.traits ? 'sombrio' : 'normal';
+    o.cons = o.cons || []; o.xsk = o.xsk || {};
+    o.stage = o.stage === 0 || o.stage === 1 ? o.stage : 2; o.stages = o.stages && typeof o.stages === 'object' && !Array.isArray(o.stages) ? o.stages : {}; o.stages[o.stage] = null;
+    if (!o.opt.zone2) o.opt.zone2 = o.opt.traits ? 'sombrio' : 'normal';
     o.opt.traits = o.opt.zone2 === 'sombrio' || o.opt.zone2 === 'inferno'; o.opt.zone = o.opt.traits;
     if (UPG[o.cls]) o.cls = UPG[o.cls];
     if (!Y.classById[o.cls]) o.cls = 'lor';
@@ -197,6 +199,125 @@
       h('div', { class: 'row' }, [h('button', { class: 'pri', on: { click: function () { closeModal(); saveToLib(true); } } }, ['Salvar atual como nova']), h('button', { on: { click: closeModal } }, ['Fechar'])])]));
   }
   function load() { try { var s = localStorage.getItem(LS); if (s) return ensure(JSON.parse(s)); } catch (e) { } return ensure(); }
+  // ---------- etapas de progressão (Início / Meio / Fim do Jogo) ----------
+  // a etapa ativa fica nos campos normais da build; as outras ficam guardadas em b.stages[i]
+  var STG = ['Início', 'Meio do Jogo', 'Fim do Jogo'], STK = ['lv', 'stats', 'traits', 'bonusPts', 'bonusTraitPts', 'eq', 'tree', 'skills', 'buffs'];
+  function cl(x) { return x === undefined ? x : JSON.parse(JSON.stringify(x)); }
+  function stageSnap(o) { var r = {}; STK.forEach(function (k) { r[k] = cl(o[k]); }); return r; }
+  function setStage(i) {
+    if (i === b.stage) return;
+    var nw = !b.stages[i]; b.stages[b.stage] = stageSnap(b);
+    if (!nw) STK.forEach(function (k) { if (b.stages[i][k] !== undefined) b[k] = cl(b.stages[i][k]); });
+    b.stages[i] = null; var from = STG[b.stage]; b.stage = i; b = ensure(b);
+    simRes = null; simCmp = null; syncHeader(); refresh(true); if (nw) toast(STG[i] + ': começou como cópia de ' + from);
+  }
+  // build completa de uma etapa (a ativa é a própria b) e o cálculo dela, com cache
+  var stgCache = {};
+  function stageBuild(i) {
+    if (i === b.stage) return b; var st = b.stages[i]; if (!st) return null;
+    var o = cl(b); STK.forEach(function (k) { if (st[k] !== undefined) o[k] = cl(st[k]); }); return ensure(o);
+  }
+  function stageR(i) {
+    if (i === b.stage) return R; var o = stageBuild(i); if (!o) return null;
+    var key = JSON.stringify(o); if (stgCache[i] && stgCache[i].k === key) return stgCache[i].r;
+    var r = E.compute(o); stgCache[i] = { k: key, r: r }; return r;
+  }
+  var CPG = [['atr', 'Nível e atributos', ['lv', 'stats', 'traits', 'bonusPts', 'bonusTraitPts']], ['eq', 'Equipamentos', ['eq']], ['hab', 'Habilidades e buffs', ['tree', 'skills', 'buffs']]];
+  function openStageCopy() {
+    var alvo = h('select', null, STG.map(function (n, i) { return i === b.stage ? null : h('option', { value: i }, [n + (b.stages[i] ? '' : ' (vazia)')]); }));
+    var cks = CPG.map(function (g) { return h('input', { type: 'checkbox', checked: true }); });
+    openModal(h('div', null, [h('h3', null, ['Copiar de ' + STG[b.stage] + ' para outra etapa']),
+      h('div', { class: 'row' }, [h('label', { class: 'inl' }, ['Etapa de destino ', alvo])]),
+      h('div', { class: 'cpgrid' }, CPG.map(function (g, i) { return h('label', { class: 'inl' }, [cks[i], ' ' + g[1]]); })),
+      h('div', { class: 'tip' }, ['O que for marcado substitui o que a etapa de destino tinha. O resto dela fica como estava.']),
+      h('div', { class: 'row' }, [h('button', { class: 'pri', on: { click: function () {
+        var i = +alvo.value, st = b.stages[i] || stageSnap(b), n = 0;
+        CPG.forEach(function (g, gi) { if (cks[gi].checked) { n++; g[2].forEach(function (k) { st[k] = cl(b[k]); }); } });
+        if (!n) { toast('Marque pelo menos uma parte'); return; }
+        b.stages[i] = st; save(); closeModal(); drawStats(); drawTab(); toast('Copiado para ' + STG[i]);
+      } } }, ['Copiar']), h('button', { on: { click: closeModal } }, ['Cancelar'])])]));
+  }
+  function stageBar() {
+    return h('div', { class: 'stgbar' }, [h('span', { class: 'mut' }, ['Etapa']),
+      h('span', { class: 'seg2' }, STG.map(function (n, i) {
+        var has = i === b.stage || !!b.stages[i];
+        return h('button', { class: (i === b.stage ? 'on' : '') + (has ? '' : ' nil'), title: has ? 'Equipamentos, atributos, nível e habilidades desta etapa' : 'Ainda vazia: ao abrir, começa como cópia da etapa atual', on: { click: function () { setStage(i); } } }, [n]);
+      })),
+      h('button', { class: 'ghost sm', title: 'Copia nível, atributos, equipamentos e/ou habilidades desta etapa para outra', on: { click: openStageCopy } }, ['Copiar para…']),
+      h('small', { class: 'mut' }, ['Cada etapa guarda seu próprio nível, atributos, equipamentos e habilidades.'])]);
+  }
+
+  // ---------- link curto ----------
+  // só vai no link o que difere do padrão; depois deflate + base64url. Prefixo "z" distingue do formato antigo (base64 do JSON).
+  var EQD = { ref: 0, rar: 0, tier: 1, lines: [], cards: [], gem: [0, 0], jlines: [], ench: [] };
+  function isObj(v) { return v && typeof v === 'object' && !Array.isArray(v); }
+  function nada(v) { return v === 0 || v === false || v === null || v === '' || v === undefined || (Array.isArray(v) && !v.length) || (isObj(v) && !Object.keys(v).length); }
+  function baseFor(o) {
+    var d = ensure(); delete d.name;
+    function eqb(eq) { var r = {}; Object.keys(eq || {}).forEach(function (sl) { if (isObj(eq[sl])) r[sl] = cl(EQD); }); return r; }
+    d.eq = eqb(o.eq); d.stages = {};
+    Object.keys(o.stages || {}).forEach(function (i) { if (isObj(o.stages[i])) { var sb = stageSnap(ensure()); sb.eq = eqb(o.stages[i].eq); d.stages[i] = sb; } });
+    return d;
+  }
+  function diff(v, d) {
+    if (d !== undefined && JSON.stringify(v) === JSON.stringify(d)) return undefined;
+    if (isObj(v)) { var r = {}, n = 0; Object.keys(v).forEach(function (k) { var x = diff(v[k], isObj(d) ? d[k] : undefined); if (x !== undefined) { r[k] = x; n++; } }); return n ? r : (d === undefined ? undefined : {}); }
+    if (d === undefined && nada(v)) return undefined;
+    return v;
+  }
+  function merge(d, p) { if (isObj(d) && isObj(p)) { Object.keys(p).forEach(function (k) { d[k] = merge(d[k], p[k]); }); return d; } return p; }
+  function b64u(u8) { var s = ''; for (var i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+  function unb64u(s) { var t = atob(s.replace(/-/g, '+').replace(/_/g, '/')), u = new Uint8Array(t.length); for (var i = 0; i < t.length; i++) u[i] = t.charCodeAt(i); return u; }
+  function zpipe(u8, C) { return new Response(new Blob([u8]).stream().pipeThrough(new C('deflate-raw'))).arrayBuffer().then(function (a) { return new Uint8Array(a); }); }
+  function packB(o) { o = cl(o); if (o.stages) o.stages[o.stage] = null; return diff(o, baseFor(o)) || {}; }
+  function unpackB(p) { return merge(baseFor(p), p); }
+  // formato "y": como o "z", mas com nomes de campo curtos e as linhas de bônus como listas [t,p,v,d]
+  var KT = { v: 'V', name: 'n', cls: 'c', lv: 'l', stats: 's', traits: 't', bonusPts: 'bp', bonusTraitPts: 'bt', eq: 'e', buffs: 'b', skills: 'k', extra: 'x', opt: 'o', sim: 'm', tree: 'r', guides: 'g', sex: 'S', caos: 'C', cons: 'N', xsk: 'X', stage: 'G', stages: 'H' };
+  var KQ = { id: 'i', ref: 'r', rar: 'a', tier: 't', lines: 'l', cards: 'c', gem: 'g', jlines: 'j', ench: 'e' };
+  function inv(m) { var r = {}; Object.keys(m).forEach(function (k) { r[m[k]] = k; }); return r; }
+  var KT2 = inv(KT), KQ2 = inv(KQ);
+  function ren(o, m) { if (!isObj(o)) return o; var r = {}; Object.keys(o).forEach(function (k) { r[m[k] || k] = o[k]; }); return r; }
+  function shrinkB(p, top) {
+    p = ren(p, KT);
+    if (isObj(p.e)) Object.keys(p.e).forEach(function (sl) {
+      var q = ren(p.e[sl], KQ);
+      if (Array.isArray(q.l)) q.l = q.l.filter(function (L) { return L && L.t; }).map(function (L) { var a = [L.t, L.p || '', L.v || 0, L.d || 0]; while (a.length > 1 && !a[a.length - 1]) a.pop(); return a; });
+      p.e[sl] = q;
+    });
+    if (top && isObj(p.H)) Object.keys(p.H).forEach(function (i) { if (isObj(p.H[i])) p.H[i] = shrinkB(p.H[i], false); });
+    return p;
+  }
+  function growB(p, top) {
+    p = ren(p, KT2);
+    if (isObj(p.eq)) Object.keys(p.eq).forEach(function (sl) {
+      var q = ren(p.eq[sl], KQ2);
+      if (Array.isArray(q.lines)) q.lines = q.lines.map(function (a) { return Array.isArray(a) ? { t: a[0] || '', p: a[1] || '', v: a[2] || 0, d: a[3] || 0 } : a; });
+      p.eq[sl] = q;
+    });
+    if (top && isObj(p.stages)) Object.keys(p.stages).forEach(function (i) { if (isObj(p.stages[i])) p.stages[i] = growB(p.stages[i], false); });
+    return p;
+  }
+  function shortCode(o) {
+    var js = JSON.stringify(shrinkB(packB(o), true));
+    if (!window.CompressionStream) return Promise.resolve('x' + b64u(new TextEncoder().encode(js)));
+    return zpipe(new TextEncoder().encode(js), CompressionStream).then(function (u) { return 'y' + b64u(u); });
+  }
+  function readCode(s) {
+    s = (s || '').trim(); var m = s.match(/#b=([^&\s]+)/); if (m) s = decodeURIComponent(m[1]);
+    if (s[0] === 'z') return zpipe(unb64u(s.slice(1)), DecompressionStream).then(function (u) { return unpackB(JSON.parse(new TextDecoder().decode(u))); });
+    if (s[0] === 'j') return Promise.resolve(unpackB(JSON.parse(new TextDecoder().decode(unb64u(s.slice(1))))));
+    if (s[0] === 'y') return zpipe(unb64u(s.slice(1)), DecompressionStream).then(function (u) { return unpackB(growB(JSON.parse(new TextDecoder().decode(u)), true)); });
+    if (s[0] === 'x') return Promise.resolve(unpackB(growB(JSON.parse(new TextDecoder().decode(unb64u(s.slice(1)))), true)));
+    return Promise.resolve().then(function () { return fromCode(s); });
+  }
+  function baseUrl() { return location.href.split('#')[0]; }
+  function copyLink(o) {
+    return shortCode(o).then(function (c) {
+      var u = baseUrl() + '#b=' + c;
+      navigator.clipboard && navigator.clipboard.writeText(u).then(function () { toast('Link copiado (' + u.length + ' caracteres)'); }, function () { prompt('Copie o link:', u); });
+      return c;
+    });
+  }
   function toCode(o) { return btoa(unescape(encodeURIComponent(JSON.stringify(o)))); }
   function fromCode(s) { s = s.trim(); var m = s.match(/#b=([^&\s]+)/); if (m) s = decodeURIComponent(m[1]); if (s[0] === '{') return JSON.parse(s); return JSON.parse(decodeURIComponent(escape(atob(s)))); }
 
@@ -273,9 +394,7 @@
     document.addEventListener('keydown', function (e) { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); saveToLib(false); } });
     $('#btnExport').onclick = openExport; $('#btnImport').onclick = openImport;
     $('#btnShare').onclick = function () {
-      var u = location.href.split('#')[0] + '#b=' + encodeURIComponent(toCode(b));
-      navigator.clipboard && navigator.clipboard.writeText(u).then(function () { toast('Link copiado'); }, function () { prompt('Copie o link:', u); });
-      history.replaceState(null, '', '#b=' + encodeURIComponent(toCode(b)));
+      copyLink(b).then(function (c) { history.replaceState(null, '', '#b=' + c); }, function (e) { toast('Não foi possível gerar o link: ' + e.message); });
     };
     document.querySelectorAll('#tabs button').forEach(function (bt) {
       bt.onclick = function () { tab = bt.dataset.tab; document.querySelectorAll('#tabs button').forEach(function (x) { x.classList.toggle('on', x === bt); }); drawTab(); };
@@ -315,7 +434,7 @@
     openModal(h('div', null, [
       h('h3', null, ['Importar build']), ta, file, err,
       h('div', { class: 'row' }, [
-        h('button', { class: 'pri', on: { click: function () { try { b = ensure(fromCode(ta.value)); syncHeader(); refresh(true); closeModal(); toast('Build importada'); } catch (e) { err.textContent = 'Não foi possível ler a build: ' + e.message; } } } }, ['Importar']),
+        h('button', { class: 'pri', on: { click: function () { readCode(ta.value).then(function (o) { b = ensure(o); simRes = null; syncHeader(); refresh(true); closeModal(); toast('Build importada'); }).catch(function (e) { err.textContent = 'Não foi possível ler a build: ' + e.message; }); } } }, ['Importar']),
         h('button', { on: { click: closeModal } }, ['Cancelar'])
       ])
     ]));
@@ -453,6 +572,7 @@
         h('div', { class: 'hbars' }, [bar('HP', R.hp, 'hp'), bar('SP', R.sp, 'sp')])])]));
     function bar(l, v, k) { return h('div', { class: 'hb ' + k }, [h('span', null, [l]), h('b', null, [fmt(v)])]); }
     statPanel(el, wA);
+    stageCmp(el);
     var off = R.notes;
     if (off.length) {
       var c4 = h('details', { class: 'card' }, [h('summary', null, ['Efeitos especiais (' + off.length + ')'])]);
@@ -460,6 +580,26 @@
       off.forEach(function (n) { c4.appendChild(h('div', { class: 'fx' + (n.on ? ' on' : '') }, [n.src + ': ' + n.t])); });
       el.appendChild(c4);
     }
+  }
+
+  // comparação com outra etapa: valores desta etapa e a diferença para a etapa escolhida
+  var cmpStage = null;
+  function stageCmp(el) {
+    var outras = [0, 1, 2].filter(function (i) { return i !== b.stage && b.stages[i]; });
+    if (!outras.length) return;
+    if (outras.indexOf(cmpStage) < 0) cmpStage = outras.indexOf(b.stage - 1) >= 0 ? b.stage - 1 : outras[outras.length - 1];
+    var Q = stageR(cmpStage), qb = b.stages[cmpStage]; if (!Q) return;
+    function atq(r) { return r.batk * 2 + r.wAtkBase + r.refAtk + r.equipAtk; }
+    var M = [['Nível', function (r, x) { return x.lv; }], ['HP', function (r) { return r.hp; }], ['SP', function (r) { return r.sp; }], ['ATQ', atq], ['ATQ Mágico', function (r) { return r.matk; }],
+      ['P.ATQ', function (r) { return r.patk; }], ['S.ATQM', function (r) { return r.smatk; }], ['DEF', function (r) { return r.def + r.def2; }], ['DEF Mágica', function (r) { return r.mdef + r.mdef2; }],
+      ['Precisão', function (r) { return r.hit; }], ['Esquiva', function (r) { return r.flee; }], ['Crítico', function (r) { return r.critChance; }, 1], ['Vel. de Ataque', function (r) { return r.aspdEff; }]];
+    var sel = h('select', { class: 'sm', on: { change: function (e) { cmpStage = +e.target.value; drawStats(); } } }, outras.map(function (i) { return h('option', { value: i, selected: i === cmpStage }, [STG[i]]); }));
+    var tb = h('table', { class: 'tbl cmpt' }, [h('tr', null, [h('th', null, ['']), h('th', null, [STG[b.stage]]), h('th', null, ['vs ' + STG[cmpStage]])])]);
+    M.forEach(function (m) {
+      var a = +m[1](R, b) || 0, c = +m[1](Q, qb) || 0, d = a - c, dg = m[2] || 0;
+      tb.appendChild(h('tr', null, [h('td', null, [m[0]]), h('td', null, [fmt(a, dg)]), h('td', { class: Math.abs(d) < 1e-9 ? 'mut' : d > 0 ? 'pos' : 'neg' }, [Math.abs(d) < 1e-9 ? '=' : (d > 0 ? '+' : '') + fmt(d, dg)])]));
+    });
+    el.appendChild(h('div', { class: 'card' }, [fold('st.cmp', 'Comparar etapas', [h('div', { class: 'row', style: 'margin:0 0 6px' }, [h('span', { class: 'mut sm' }, ['Comparar com ']), sel]), tb], { cls: 'main' })]));
   }
 
   // ---------- aba Status ----------
@@ -947,6 +1087,7 @@
     t.appendChild(h('div', { class: 'tip', style: 'text-align:center' }, ['O guia padrão é editorial, com base na wiki do YggIdle. Monstros, quantidades e EXP vêm da wiki do YggIdle.']));
   }
   function tabStatus(t) {
+    t.appendChild(stageBar());
     var left = R.ptsTotal - R.ptsUsed;
     var c = h('div', { class: 'card' }, [h('h3', null, ['Atributos base'])]);
     c.appendChild(h('div', { class: 'row' }, [h('b', { class: left < 0 ? 'bad' : 'ok' }, ['Pontos restantes: ' + left]), h('span', { class: 'mut' }, ['(' + R.ptsUsed + ' de ' + R.ptsTotal + ')']),
@@ -1000,7 +1141,7 @@
     if (it.wl) d.push('Arma nv ' + it.wl); if (it.lv) d.push('Nv ' + it.lv); if (it.wt) d.push('Peso ' + it.wt);
     return h('div', { class: 'itip' }, [h('div', { class: 'ith' }, [itemIcon(it.id, 'ico lg'), h('span', null, [h('b', { style: rar ? 'color:' + rar.color : '' }, [(e && e.ref ? '+' + e.ref + ' ' : '') + it.n + (it.sl ? ' [' + it.sl + ']' : '')]), h('small', null, [(it.w ? (Y.weaponNames[it.w] || it.w) + ' · ' : '') + d.join(' · ')])])]),
       it.cl ? h('div', { class: 'tip' }, [cliTag(it), it.cf ? ' Lido do cliente do jogo.' : ' Está no cliente do jogo, mas não na wiki: confira se existe no YggIdle.']) : null,
-      it.f ? h('div', { class: 'tip idesc' }, [String(it.f).slice(0, 420)]) : null,
+      (it.f || (Y.citemsF || {})[it.id]) ? h('div', { class: 'tip idesc' }, [String(it.f || Y.citemsF[it.id]).slice(0, 420)]) : null,
       it.j ? h('div', { class: 'tip', style: 'opacity:.75' }, ['Classes: ' + (Array.isArray(it.j) ? it.j.join(', ') : it.j)]) : null]);
   }
   // grade em pares (esquerda - direita); no Sombrio e no Visual cada slot fica na posição do equivalente comum
@@ -1030,6 +1171,7 @@
     return bt;
   }
   function tabEquip(t) {
+    t.appendChild(stageBar());
     var cl = Y.classById[b.cls];
     var win = h('div', { class: 'rowin eqwin', style: '--lc:' + Y.lineColor(b.cls) }, [
       h('div', { class: 'rotitle' }, [h('span', null, ['Equipamentos']), h('small', null, ['ALT+Q']),
@@ -1266,13 +1408,20 @@
   function tabUsed(tb) { var u = 0; tb.sk.forEach(function (s) { if (!s[5]) u += tLv(s[0]); }); return u; }
   function inClass(ae) { return tabsOf().some(function (tb) { return tb.sk.some(function (s) { return s[0] === ae; }); }); }
   function reqOk(s) { return s[2].every(function (r) { return !inClass(r[0]) || tLv(r[0]) >= r[1]; }); }
+  // pontos livres para a aba ti: como no jogo, os pontos de uma classe podem ir para as abas dela ou das classes anteriores
+  // (ex.: depois dos 49 da 1ª classe, os pontos da 2ª ainda podem subir habilidades da 1ª)
+  function tabLeft(ti) {
+    var T = tabsOf(), best = Infinity, P = 0, U = 0;
+    for (var k = T.length - 1; k >= 0; k--) { P += T[k].pts; U += tabUsed(T[k]); if (k <= ti) best = Math.min(best, P - U); }
+    return Math.max(0, best === Infinity ? 0 : best);
+  }
   function gateOk(ti) { var T = tabsOf(); for (var i = 0; i < ti; i++) if (tabUsed(T[i]) < T[i].pts) return false; return true; }
   function syncSim(ae) { var id = AKS[ae]; if (!id || !Y.skills[id]) return; var lv = tLv(ae), s = Y.skills[id]; if (s.k === 'b') b.buffs[id] = Math.min(s.max, lv); else if (lv) b.skills[id] = Math.min(s.max, lv); }
   function cascade() {
     var ch = true;
     while (ch) { ch = false; tabsOf().forEach(function (tb) { tb.sk.forEach(function (s) { if (tLv(s[0]) && !reqOk(s)) { delete b.tree[s[0]]; syncSim(s[0]); ch = true; } }); }); }
   }
-  function canUp(s, ti) { var tb = tabsOf()[ti]; return tLv(s[0]) < s[1] && reqOk(s) && gateOk(ti) && (s[5] || tabUsed(tb) < tb.pts); }
+  function canUp(s, ti) { var tb = tabsOf()[ti]; return tLv(s[0]) < s[1] && reqOk(s) && gateOk(ti) && (s[5] || tabLeft(ti) > 0); }
   // sobe a habilidade; se faltar pré-requisito, preenche a cadeia inteira antes (como no jogo ao clicar numa avançada)
   function skUp(s, ti, n) {
     var auto = null;
@@ -1297,7 +1446,7 @@
       var s = T[ti].sk.filter(function (x) { return x[0] === ae; })[0]; if (!s) continue;
       s[2].forEach(function (r) { if (inClass(r[0]) && tLv(r[0]) < r[1]) learn(r[0], r[1], seen); });
       var tb = T[ti];
-      while (tLv(ae) < Math.min(lv, s[1]) && (s[5] || tabUsed(tb) < tb.pts)) b.tree[ae] = tLv(ae) + 1;
+      while (tLv(ae) < Math.min(lv, s[1]) && (s[5] || tabLeft(ti) > 0)) b.tree[ae] = tLv(ae) + 1;
       syncSim(ae); return;
     }
   }
@@ -1363,6 +1512,7 @@
     win.appendChild(box);
   }
   function tabSkills(t) {
+    t.appendChild(stageBar());
     var T = tabsOf(); if (skTab > T.length) skTab = 0;
     var win = h('div', { class: 'rowin skwin', style: '--lc:' + Y.lineColor(b.cls) });
     var totUsed = 0, totPts = 0; T.forEach(function (tb) { totUsed += tabUsed(tb); totPts += tb.pts; });
@@ -1377,7 +1527,7 @@
     win.appendChild(tabsEl);
     if (skTab === T.length) { tabExtra(win); t.appendChild(win); tabSkillsSim(t); return; }
     if (!T.length) { win.appendChild(h('div', { class: 'mut', style: 'padding:16px' }, ['Árvore indisponível para esta classe.'])); t.appendChild(win); return; }
-    var tb = T[skTab], used = tabUsed(tb), left = tb.pts - used, gate = gateOk(skTab);
+    var tb = T[skTab], used = tabUsed(tb), left = tabLeft(skTab), gate = gateOk(skTab);
     var rows = 1; tb.sk.forEach(function (s) { rows = Math.max(rows, s[4] + 1); });
     var grid = h('div', { class: 'skgrid', style: 'grid-template-rows:repeat(' + rows + ',auto)' });
     var cells = {};
@@ -1408,13 +1558,14 @@
     if (!window._skRz) { window._skRz = 1; window.addEventListener('resize', function () { if (tab === 'skills') drawTab(); }); }
     win.appendChild(h('div', { class: 'skfoot' }, [
       h('span', { class: 'skpts' + (left ? '' : ' zero') }, ['Pontos de habilidade: ', h('b', null, [String(left)])]),
+      used > tb.pts ? h('span', { class: 'chip' }, [(used - tb.pts) + ' ponto(s) vindos das classes seguintes']) : null,
       !gate ? h('span', { class: 'chip bad' }, ['Complete a aba anterior (' + T.slice(0, skTab).map(function (x) { return x.n; }).join(', ') + ')']) : null,
       h('span', { class: 'grow' }),
       h('span', { class: 'legend' }, [h('i', { class: 'lg y' }, ['Y']), 'habilidade do YggIdle ', h('i', { class: 'lg n' }, ['✎']), 'alterada ', h('i', { class: 'lg f' }), 'não gasta pontos']),
       h('button', { class: 'sm ghost', on: { click: function () { tb.sk.forEach(function (s) { delete b.tree[s[0]]; }); cascade(); refresh(true); } } }, ['Zerar aba']),
       h('button', { class: 'sm ghost', on: { click: function () { if (confirm('Zerar todas as habilidades?')) { b.tree = {}; refresh(true); } } } }, ['Zerar tudo'])]));
     t.appendChild(win);
-    t.appendChild(h('div', { class: 'tip', style: 'margin:-6px 0 14px' }, ['Árvore com os pré-requisitos e as mudanças publicadas na wiki do YggIdle (1ª classe 49 pontos, 2ª classe 69). As linhas mostram o que cada habilidade pede; o número é o nível exigido.']));
+    t.appendChild(h('div', { class: 'tip', style: 'margin:-6px 0 14px' }, ['Árvore com os pré-requisitos e as mudanças publicadas na wiki do YggIdle (1ª classe 49 pontos, 2ª classe 69). Depois de gastar os 49 da 1ª classe, os pontos da 2ª também podem ir para a 1ª, como no jogo. As linhas mostram o que cada habilidade pede; o número é o nível exigido.']));
     tabSkillsSim(t);
   }
   function tabSkillsSim(t) {
@@ -1521,6 +1672,7 @@
   }
   function tabSim(t) {
     var S = b.sim, mon = Y.monById[S.mon];
+    t.appendChild(stageBar());
     simStage(t, mon);
     var c = h('div', { class: 'card' }, [h('h3', null, ['Alvo e cenário'])]);
     c.appendChild(h('div', { class: 'row' }, [
@@ -1561,8 +1713,33 @@
     var c3 = h('div', { class: 'card' }, [h('h3', null, ['Resultado'])]);
     var run = h('button', { class: 'pri', disabled: !mon, on: { click: function () { runSim(c3); } } }, ['Simular']);
     c3.appendChild(h('div', { class: 'row' }, [run, h('label', { class: 'inl' }, ['Repetições (Monte Carlo) ', h('input', { class: 'num', type: 'number', value: S.runs, on: { change: function (e) { S.runs = Math.max(1, Math.min(1000, +e.target.value || 100)); save(); } } })])]));
+    var cmpB = h('button', { disabled: !mon, title: 'Roda a mesma simulação (alvo, cenário e rotação) com cada etapa preenchida', on: { click: function () { simCompare(c3); } } }, ['Comparar etapas']);
+    c3.firstChild.nextSibling.appendChild(cmpB);
     t.appendChild(c3);
     if (simRes) renderSim(c3, simRes);
+    if (simCmp) renderSimCmp(c3, simCmp);
+  }
+  var simCmp = null;
+  function simCompare(host) {
+    var S = b.sim, mon = Y.monById[S.mon]; if (!mon) return;
+    var runs = Math.min(S.runs, 200), res = [];
+    [0, 1, 2].forEach(function (i) {
+      var bb = stageBuild(i); if (!bb) return; var rr = stageR(i);
+      var cfg = { mon: mon, n: S.n, rot: S.rot, farm: S.farm, maxT: S.maxT, mobDelay: S.mobDelay, mobEle: S.mobEle, healPs: S.healPs, spRegen: S.spRegen, seed: 12345, critDef: rr.B.critDef || 0 };
+      var one = D.simulate(rr, bb, cfg, false), mc = D.monteCarlo(rr, bb, cfg, runs);
+      res.push({ i: i, lv: bb.lv, one: one, mc: mc });
+    });
+    simCmp = { mon: mon.n || mon.name || '', runs: runs, res: res }; drawTab();
+  }
+  function renderSimCmp(c, s) {
+    var tb = h('table', { class: 'tbl', style: 'margin-top:10px' }, [h('tr', null, ['Etapa', 'Nível', 'DPS médio', 'Tempo p/ matar (mediana)', 'Faixa p10–p90', 'Vitórias'].map(function (x) { return h('th', null, [x]); }))]);
+    s.res.forEach(function (r) {
+      var mc = r.mc;
+      tb.appendChild(h('tr', { class: r.i === b.stage ? 'on' : '' }, [STG[r.i] + (r.i === b.stage ? ' (atual)' : ''), r.lv, fmt(r.one.dps), mc.p50 == null ? 'nunca venceu' : fmt(mc.p50, 1) + ' s', mc.p50 == null ? '—' : fmt(mc.p10, 1) + '–' + fmt(mc.p90, 1) + ' s', mc.wins + '/' + mc.runs].map(function (x) { return h('td', null, [String(x)]); })));
+    });
+    c.appendChild(h('h4', { style: 'margin:14px 0 0' }, ['Comparação entre etapas' + (s.mon ? ' · ' + s.mon : '')]));
+    c.appendChild(tb);
+    if (s.res.length < 2) c.appendChild(h('div', { class: 'tip' }, ['Só uma etapa preenchida. Abra Início ou Meio do Jogo (ou use “Copiar para…”) para ter o que comparar.']));
   }
   function runSim(host) {
     var S = b.sim, mon = Y.monById[S.mon]; if (!mon) return;
@@ -1926,6 +2103,7 @@
     return rm;
   }
   var cView = null, cFind = '';
+  var cDragNow = null;
   function tabCaos(t) {
     var pts = cPts(), F = ascFor(b), asc = CA.nodes.filter(function (n) { return n.t === 'ascensao' && cHas(n.i); }).length;
     var zeny = 0; Object.keys(b.caos.n).forEach(function (id) { if (CN[id]) zeny += CN[id].z || 0; });
@@ -1965,7 +2143,7 @@
         if (drag && drag.moved) return;
         if (cHas(n.i)) { delete b.caos.n[n.i]; var rm = cPrune(); hideTip(); refresh(true); if (rm) toast(rm + ' nó(s) soltos removidos junto'); return; }
         var w = cWhy(n); if (w) { toast(w); return; }
-        b.caos.n[n.i] = 1; refresh(true);
+        b.caos.n[n.i] = 1; hideTip(); refresh(true);
       });
       elN[n.i] = g; gN.appendChild(g);
     });
@@ -1988,13 +2166,52 @@
       var nw = Math.max(200, Math.min(W0 * 1.4, cView.w * k)), nh = nw * cView.h / cView.w;
       cView.x = px - (px - cView.x) * nw / cView.w; cView.y = py - (py - cView.y) * nh / cView.h; cView.w = nw; cView.h = nh; setVB();
     }, { passive: false });
-    svg.addEventListener('mousedown', function (e) { drag = { x: e.clientX, y: e.clientY, vx: cView.x, vy: cView.y, moved: false }; });
-    window.addEventListener('mousemove', function (e) {
-      if (!drag) return; var r = svg.getBoundingClientRect(); var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-      if (Math.abs(dx) + Math.abs(dy) > 4) drag.moved = true;
-      cView.x = drag.vx - dx / r.width * cView.w; cView.y = drag.vy - dy / r.height * cView.h; setVB();
+    // arrasto: preventDefault evita seleção de texto / arrastar nativo (os nós grandes têm texto e halo, e o
+    // navegador "engolia" o mouseup, deixando o mapa preso ao cursor); os ouvintes da janela ficam registrados uma vez só
+    svg.addEventListener('mousedown', function (e) { if (e.button !== 0) return; e.preventDefault(); drag = { x: e.clientX, y: e.clientY, vx: cView.x, vy: cView.y, moved: false }; cDragNow = { get: function () { return drag; }, end: function () { drag = null; }, move: onMove }; });
+    svg.addEventListener('dragstart', function (e) { e.preventDefault(); });
+    // toque: um dedo arrasta, dois dedos aproximam/afastam
+    var pz = null;
+    function tps(e) { return [].map.call(e.touches, function (t) { return [t.clientX, t.clientY]; }); }
+    svg.addEventListener('touchstart', function (e) {
+      var p = tps(e);
+      if (p.length === 1) { pz = null; drag = { x: p[0][0], y: p[0][1], vx: cView.x, vy: cView.y, moved: false, touch: 1 }; }
+      else if (p.length === 2) { drag = { moved: true, touch: 1 }; pz = { d: Math.hypot(p[0][0] - p[1][0], p[0][1] - p[1][1]) || 1, cx: (p[0][0] + p[1][0]) / 2, cy: (p[0][1] + p[1][1]) / 2, v: { x: cView.x, y: cView.y, w: cView.w, h: cView.h } }; hideTip(); }
+    }, { passive: true });
+    svg.addEventListener('touchmove', function (e) {
+      var p = tps(e), r = svg.getBoundingClientRect();
+      if (pz && p.length === 2) {
+        e.preventDefault(); var d = Math.hypot(p[0][0] - p[1][0], p[0][1] - p[1][1]) || 1, v = pz.v;
+        var nw = Math.max(200, Math.min(W0 * 1.4, v.w * pz.d / d)), nh = nw * v.h / v.w;
+        var fx = (pz.cx - r.left) / r.width, fy = (pz.cy - r.top) / r.height, px = v.x + fx * v.w, py = v.y + fy * v.h;
+        var mx = ((p[0][0] + p[1][0]) / 2 - pz.cx) / r.width * nw, my = ((p[0][1] + p[1][1]) / 2 - pz.cy) / r.height * nh;
+        cView.w = nw; cView.h = nh; cView.x = px - fx * nw - mx; cView.y = py - fy * nh - my; setVB(); return;
+      }
+      if (drag && drag.touch && p.length === 1 && drag.vx != null) {
+        var dx = p[0][0] - drag.x, dy = p[0][1] - drag.y;
+        if (!drag.moved && Math.abs(dx) + Math.abs(dy) < 6) return;
+        e.preventDefault(); if (!drag.moved) hideTip(); drag.moved = true;
+        cView.x = drag.vx - dx / r.width * cView.w; cView.y = drag.vy - dy / r.height * cView.h; setVB();
+      }
+    }, { passive: false });
+    svg.addEventListener('touchend', function (e) {
+      if (e.touches.length) { pz = null; return; } // sobrou um dedo depois da pinça: espera soltar
+      var d = drag; pz = null; setTimeout(function () { if (drag === d) drag = null; }, 400); // o clique sintético vem depois do touchend
     });
-    window.addEventListener('mouseup', function () { setTimeout(function () { drag = null; }, 0); });
+    function onMove(e) {
+      if (!drag) return;
+      if (!e.buttons) { drag = null; return; } // botão já solto fora da janela
+      var r = svg.getBoundingClientRect(); var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+      if (Math.abs(dx) + Math.abs(dy) > 4) drag.moved = true;
+      if (!drag.moved) return;
+      cView.x = drag.vx - dx / r.width * cView.w; cView.y = drag.vy - dy / r.height * cView.h; setVB();
+    }
+    if (!window._cDragOn) {
+      window._cDragOn = 1;
+      window.addEventListener('mousemove', function (e) { if (cDragNow) cDragNow.move(e); });
+      window.addEventListener('mouseup', function () { var d = cDragNow; if (d) setTimeout(function () { d.end(); if (cDragNow === d) cDragNow = null; }, 0); });
+      window.addEventListener('blur', function () { if (cDragNow) { cDragNow.end(); cDragNow = null; } });
+    }
     var mapCard = h('div', { class: 'card caoswrap' }, [svg, h('div', { class: 'czoom' }, [
       h('button', { class: 'sm', title: 'Aproximar', on: { click: function () { cView.x += cView.w * .15; cView.y += cView.h * .15; cView.w *= .7; cView.h *= .7; setVB(); } } }, ['+']),
       h('button', { class: 'sm', title: 'Afastar', on: { click: function () { cView.x -= cView.w * .2; cView.y -= cView.h * .2; cView.w *= 1.4; cView.h *= 1.4; setVB(); } } }, ['−']),
@@ -2142,7 +2359,6 @@
     o.cls = o.cls || d.cls; if (!o.name) o.name = d.t; if (d.lv && !o.lv) o.lv = d.lv; if (d.sex && !o.sex) o.sex = d.sex;
     return ensure(o);
   }
-  function destLink(d) { return location.href.split('#')[0] + '#b=' + encodeURIComponent(toCode(destBuild(d))); }
   function openDest(d) {
     var lib = libGet();
     if (!(curId && lib[curId] && savedSnap === snap()) && !confirm('Abrir “' + d.t + '”? A build atual tem alterações não salvas e será substituída.')) return;
@@ -2168,7 +2384,7 @@
           old ? h('span', { class: 'dold', title: 'O planner e o jogo mudaram desde que esta build foi montada. Confira os valores antes de seguir.' }, ['⚠ Montada na v' + d.v + ': pode estar desatualizada']) : null]),
         h('div', { class: 'dact' }, [
           h('button', { class: 'pri', on: { click: function () { openDest(d); } } }, ['Abrir no planner ▸']),
-          h('button', { class: 'ghost', title: 'Copia o link desta build', on: { click: function () { var u = destLink(d); navigator.clipboard && navigator.clipboard.writeText(u).then(function () { toast('Link copiado'); }, function () { prompt('Copie o link:', u); }); } } }, ['Link'])])])]);
+          h('button', { class: 'ghost', title: 'Copia o link desta build', on: { click: function () { copyLink(destBuild(d)); } } }, ['Link'])])])]);
     card.addEventListener('mousemove', function (e) { var r = card.getBoundingClientRect(); card.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100) + '%'); card.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100) + '%'); });
     return card;
   }
@@ -2256,9 +2472,12 @@
   // ---------- início ----------
   function init() {
     var m = location.hash.match(/#b=([^&]+)/);
-    try { b = m ? ensure(fromCode(decodeURIComponent(m[1]))) : load(); } catch (e) { b = load(); }
+    try { b = m && !/^[zjyx]/.test(m[1]) ? ensure(fromCode(decodeURIComponent(m[1]))) : load(); } catch (e) { b = load(); }
+    if (m && /^[zjyx]/.test(m[1])) readCode(m[1]).then(function (o) { b = ensure(o); simRes = null; syncHeader(); refresh(true); toast('Build do link carregada'); }, function () { toast('Link inválido'); });
     try { var cid = localStorage.getItem(CUR), e = cid && libGet()[cid]; if (e) { curId = cid; savedSnap = JSON.stringify(ensure(e.b)); } } catch (x) { }
     initHeader(); syncHeader(); recompute(); drawStats(); drawTab(); updateState();
+    // descrições dos itens do cliente (só aparecem nos detalhes do item): carregam depois da primeira tela
+    setTimeout(function () { var sc = document.createElement('script'); sc.src = 'data/citems_f.js?v=' + VERSION; document.body.appendChild(sc); }, 400);
   }
   init();
 })();

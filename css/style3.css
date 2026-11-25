@@ -508,3 +508,9 @@ img.mmapbig{width:100%;border-radius:10px;border:1px solid var(--line)}
 .cjbox select{width:100%}
 .cjbox .line{display:flex;gap:6px;align-items:center}
 .cjbox .line select{flex:1;min-width:0}
+.stgbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px}.stgbar .seg2 button{padding:6px 14px;font-size:13px}.stgbar .seg2 button.nil{opacity:.6;font-style:italic}.stgbar small{font-size:11px}
+.caosmap{touch-action:none}
+.cpgrid{display:flex;flex-direction:column;gap:6px;margin:10px 0}
+.cmpt{width:100%;font-size:12px}.cmpt td,.cmpt th{padding:3px 6px}.cmpt td:nth-child(n+2),.cmpt th:nth-child(n+2){text-align:right;font-variant-numeric:tabular-nums}.cmpt td.pos{color:#7fd08f}.cmpt td.neg{color:#e58b7a}
+.stgbar button.ghost.sm{font-size:12px;padding:5px 10px}
+.tbl tr.on td{color:var(--gold2)}

@@ -4,6 +4,46 @@
 window.YGG = window.YGG || {};
 YGG.changelog = [
   {
+    v: '0.2.7-hf1', d: '2026-11-24', t: 'Comparar etapas, link ainda menor e mapa do Caos no toque',
+    g: [
+      ['Etapas', [
+        'Novo quadro “Comparar etapas” na barra lateral: mostra nível, HP, SP, ATQ, DEF, precisão, esquiva, crítico e velocidade de ataque da etapa atual e quanto mudou em relação a outra etapa.',
+        'Botão “Copiar para…” na barra de etapas: copia só o que você marcar (nível e atributos, equipamentos, habilidades e buffs) para outra etapa.'
+      ]],
+      ['Simulação', [
+        'A barra de etapas também aparece na Simulação, e o novo botão “Comparar etapas” roda o mesmo alvo e a mesma rotação com cada etapa preenchida, mostrando DPS e tempo para matar lado a lado.'
+      ]],
+      ['Link', [
+        'O link ficou mais uns 12% menor (nomes de campo curtos e bônus aleatórios compactados). Links das versões anteriores continuam abrindo.'
+      ]],
+      ['Árvore do Caos', [
+        'No celular, um dedo arrasta o mapa e dois dedos aproximam ou afastam.'
+      ]],
+      ['Desempenho', [
+        'A primeira abertura baixa cerca de metade dos dados de itens do cliente: as descrições dos itens agora carregam logo depois que a tela aparece.'
+      ]]
+    ]
+  },
+  {
+    v: '0.2.7', d: '2026-11-24', t: 'Etapas de progressão, link curto e correções nas árvores',
+    g: [
+      ['Etapas', [
+        'Novas abas Início · Meio do Jogo · Fim do Jogo em Status, Equipamentos e Habilidades. Cada etapa guarda seu próprio nível, atributos, traços, equipamentos e habilidades; classe, Árvore do Caos e consumíveis são comuns às três.',
+        'Uma etapa vazia começa como cópia da etapa em que você estava. Builds antigas abrem em Fim do Jogo.'
+      ]],
+      ['Link', [
+        'O link de compartilhamento ficou bem mais curto (cerca de 4 a 5 vezes menor): só vai o que difere do padrão, comprimido. Links antigos continuam abrindo.',
+        'Ao copiar, o aviso mostra quantos caracteres o link tem.'
+      ]],
+      ['Habilidades', [
+        'Depois de gastar os 49 pontos da 1ª classe, os pontos da classe seguinte também podem ir para a árvore da 1ª classe, como no jogo.'
+      ]],
+      ['Árvore do Caos', [
+        'Clicar ou arrastar sobre os nós grandes não trava mais o mapa nem o deixa preso ao mouse.'
+      ]]
+    ]
+  },
+  {
     v: '0.2.6', d: '2026-11-24', t: 'Equipamentos reorganizados e troca Comum/Sombrio/Visual',
     g: [
       ['Equipamentos', [
