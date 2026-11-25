@@ -4,6 +4,17 @@
 window.YGG = window.YGG || {};
 YGG.changelog = [
   {
+    v: '0.2.9', d: '2026-11-25', t: 'Efeitos atuais ao passar o mouse no equipamento',
+    g: [
+      ['Equipamentos', [
+        'Ao passar o mouse num item da aba Equipamentos, o quadro agora lista os efeitos que ele concede neste momento: bônus padrão, de refino e de conjunto, cada carta (com o nome), gemas, encantamentos e os bônus aleatórios com os valores sorteados.',
+        'Cada bônus tem a cor da sua origem (padrão, refino, conjunto, carta, gema, encantamento, destino e aleatório), com uma legenda no fim do quadro.',
+        'Só aparece o que está ativo: bônus de refino já contam o refino atual e efeitos de conjunto só entram quando o combo está completo.',
+        'O espaço de carta não aparece mais duplicado no nome (antes saía “Espada [3] [3]”).'
+      ]]
+    ]
+  },
+  {
     v: '0.2.8', d: '2026-11-25', t: 'Atualização do YggIdle: Cabra Macho na Capa, anéis novos e Ascensão Ying da Cigana',
     g: [
       ['Equipamentos', [

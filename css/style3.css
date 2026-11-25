@@ -514,3 +514,12 @@ img.mmapbig{width:100%;border-radius:10px;border:1px solid var(--line)}
 .cmpt{width:100%;font-size:12px}.cmpt td,.cmpt th{padding:3px 6px}.cmpt td:nth-child(n+2),.cmpt th:nth-child(n+2){text-align:right;font-variant-numeric:tabular-nums}.cmpt td.pos{color:#7fd08f}.cmpt td.neg{color:#e58b7a}
 .stgbar button.ghost.sm{font-size:12px;padding:5px 10px}
 .tbl tr.on td{color:var(--gold2)}
+
+.ifxbox{margin-top:8px;border-top:1px solid var(--line,#ffffff22);padding-top:6px}
+.ifxt{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+.ifx{margin:4px 0}.ifxh{font-size:12px;font-weight:700}.ifxr{display:flex;justify-content:space-between;gap:12px;font-size:12px}.ifxr span{color:#ddd3b8}.ifxr b{white-space:nowrap}
+.ifxn{font-size:11.5px;color:#bfb596;line-height:1.4}
+
+.k-base{color:#e8d9a8}.k-ref{color:#ffb454}.k-set{color:#6fe3a4}.k-crd{color:#7cc4ff}.k-gem{color:#5ee0e0}.k-enc{color:#ff8fb3}.k-dst{color:#f0e26a}.k-rnd{color:#c9a0ff}
+.ifxr span{color:inherit!important}
+.ifxleg{display:flex;flex-wrap:wrap;gap:2px 10px;margin-top:6px;font-size:10.5px;opacity:.9}

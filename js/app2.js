@@ -1135,13 +1135,82 @@
     var js = Array.isArray(it.j) ? it.j : String(it.j).split(/\s*,\s*/);
     return js.some(function (j) { return cl.items.some(function (x) { return x.toLowerCase() === String(j).toLowerCase(); }) || /todas|all/i.test(j); });
   }
-  function itemTip(it, e) {
+  // o nome de muitos itens já traz o espaço de carta ("Espada [3]"): não repetir
+  function hasSlTxt(it) { return /\[\d+\]\s*$/.test(it.n || ''); }
+  // efeitos que o item (ou carta) concede agora, já com refino, conjunto e condições
+  function fxList(fxs, ctx) {
+    var out = [];
+    (fxs || []).forEach(function (f) {
+      var c = f.c, tag = !c ? '' : c.set ? 'conjunto' : (c.every || c.r != null || c.sum || c.rx) ? 'refino' : c.zone2 || c.zone ? 'zona' : '';
+      var m = E.condMult(c, ctx);
+      if (f.s) {
+        if (!m) return;
+        Object.keys(f.s).forEach(function (k) {
+          var v = f.s[k], key = k;
+          if (k.indexOf('ref2:') === 0) { key = k.slice(5); v = v * ctx.ref * ctx.ref; }
+          else if (k.indexOf('ref1:') === 0) { key = k.slice(5); v = v * ctx.ref * m; }
+          else v = v * m;
+          if (!v) return;
+          var r = statRow(key, v);
+          out.push({ l: r ? r[1] : lblKey(key), v: r ? r[2] : (v > 0 ? '+' : '') + fmt(v, 1), tag: tag, k: tag === 'conjunto' ? 'set' : tag === 'refino' ? 'ref' : '' });
+        });
+      } else if (f.t) {
+        if (!(c && c.proc) && !m) return;
+        out.push({ t: f.t, tag: tag, k: tag === 'conjunto' ? 'set' : tag === 'refino' ? 'ref' : '' });
+      }
+    });
+    return out;
+  }
+  // cor de cada bônus pela origem: padrão, refino, conjunto, carta, gema, encantamento, destino e aleatório
+  var FXK = { base: 'Padrão do item', ref: 'Refino', set: 'Conjunto (combo)', crd: 'Carta', gem: 'Gema', enc: 'Encantamento', dst: 'Bônus do destino', rnd: 'Aleatório (roll)' };
+  function fxBlock(title, rows, cls, used) {
+    if (!rows.length) return null;
+    return h('div', { class: 'ifx' }, [title ? h('div', { class: 'ifxh k-' + cls }, [title]) : null].concat(rows.map(function (r) {
+      var k = r.k || cls; if (used) used[k] = 1;
+      return r.t ? h('div', { class: 'ifxn k-' + k }, [r.t + (r.tag && r.tag !== 'conjunto' ? ' (' + r.tag + ')' : '')])
+        : h('div', { class: 'ifxr k-' + k }, [h('span', null, [r.l + (r.tag ? ' · ' + r.tag : '')]), h('b', null, [r.v])]);
+    })));
+  }
+  // bloco "Efeitos atuais" do item equipado no slot sl
+  function itemFxTip(it, e, sl) {
+    var ctx = { b: b, ref: e.ref || 0, names: (R.G && R.G.names) || {} }, blocks = [], used = {};
+    blocks.push(fxBlock(it.n, fxList(it.fx, ctx), 'base', used));
+    var cards = (e.cards || []).filter(function (cid) { return cid && E.cardFits(sl, cid); }),
+      gems = (e.gem || []).map(function (cid, gi) { return cid && E.cardFits(sl, cid, gi) ? cid : 0; }).filter(Boolean),
+      ench = E.canEnch(it) ? (e.ench || []).filter(function (cid) { return cid && Y.itemById[cid] && Y.itemById[cid].s === 'ench'; }) : [];
+    cards.concat(gems, ench).forEach(function (cid, i) {
+      var c = Y.itemById[cid]; if (!c) return;
+      var isG = i >= cards.length && i < cards.length + gems.length, rows = fxList(c.fx, ctx);
+      var ttl = (isG ? 'Gema: ' : i >= cards.length ? 'Encantamento: ' : 'Carta: ') + c.n;
+      if (!rows.length && !(c.fx && c.fx.length)) { var ds = c.f || (Y.citemsF || {})[c.id]; if (ds) rows = [{ t: String(ds).slice(0, 160) }]; }
+      blocks.push(fxBlock(ttl, rows, isG ? 'gem' : i >= cards.length ? 'enc' : 'crd', used));
+    });
+    if (it.jl) {
+      var jr = E.jlRarity(it, e.ref || 0), jrows = [];
+      (e.jlines || []).slice(0, jr).forEach(function (ix) { var J = it.jl[ix]; if (!J) return; J.k.forEach(function (k) { var v = J.v[jr - 1], r = statRow(k, v); jrows.push({ l: r ? r[1] : lblKey(k), v: r ? r[2] : '+' + v }); }); });
+      blocks.push(fxBlock('Bônus do destino', jrows, 'dst', used));
+    }
+    if (!E.EXTRA_SLOT[sl]) {
+      var lr = [];
+      (e.lines || []).forEach(function (L) {
+        var t = L.t ? E.BT[L.t] : null; if (!t || !L.v) return;
+        var key = E.resolveKey(t, L.p), v = L.v * (t.neg ? -1 : 1), r = statRow(key, v);
+        lr.push({ l: r ? r[1] : t.n, v: r ? r[2] : (v > 0 ? '+' : '') + v });
+      });
+      blocks.push(fxBlock('Bônus aleatórios', lr, 'rnd', used));
+    }
+    blocks = blocks.filter(Boolean);
+    var leg = Object.keys(FXK).filter(function (k) { return used[k]; }).map(function (k) { return h('span', { class: 'k-' + k }, ['● ' + FXK[k]]); });
+    return h('div', { class: 'ifxbox' }, [h('div', { class: 'ifxt' }, ['Efeitos atuais'])].concat(blocks.length ? blocks : [h('div', { class: 'ifxn' }, ['Nenhum efeito ativo.'])], leg.length > 1 ? [h('div', { class: 'ifxleg' }, leg)] : []));
+  }
+  function itemTip(it, e, sl) {
     var rar = e ? Y.bonus.rarities[e.rar || 0] : null, d = [];
     if (it.a) d.push('ATQ ' + it.a); if (it.ma) d.push('ATQM ' + it.ma); if (it.d) d.push('DEF ' + it.d); if (it.md) d.push('MDEF ' + it.md);
     if (it.wl) d.push('Arma nv ' + it.wl); if (it.lv) d.push('Nv ' + it.lv); if (it.wt) d.push('Peso ' + it.wt);
-    return h('div', { class: 'itip' }, [h('div', { class: 'ith' }, [itemIcon(it.id, 'ico lg'), h('span', null, [h('b', { style: rar ? 'color:' + rar.color : '' }, [(e && e.ref ? '+' + e.ref + ' ' : '') + it.n + (it.sl ? ' [' + it.sl + ']' : '')]), h('small', null, [(it.w ? (Y.weaponNames[it.w] || it.w) + ' · ' : '') + d.join(' · ')])])]),
+    return h('div', { class: 'itip' }, [h('div', { class: 'ith' }, [itemIcon(it.id, 'ico lg'), h('span', null, [h('b', { style: rar ? 'color:' + rar.color : '' }, [(e && e.ref ? '+' + e.ref + ' ' : '') + it.n + (it.sl && !hasSlTxt(it) ? ' [' + it.sl + ']' : '')]), h('small', null, [(it.w ? (Y.weaponNames[it.w] || it.w) + ' · ' : '') + d.join(' · ')])])]),
       it.cl ? h('div', { class: 'tip' }, [cliTag(it), it.cf ? ' Lido do cliente do jogo.' : ' Está no cliente do jogo, mas não na wiki: confira se existe no YggIdle.']) : null,
       (it.f || (Y.citemsF || {})[it.id]) ? h('div', { class: 'tip idesc' }, [String(it.f || Y.citemsF[it.id]).slice(0, 420)]) : null,
+      e && sl ? itemFxTip(it, e, sl) : null,
       it.j ? h('div', { class: 'tip', style: 'opacity:.75' }, ['Classes: ' + (Array.isArray(it.j) ? it.j.join(', ') : it.j)]) : null]);
   }
   // grade em pares (esquerda - direita); no Sombrio e no Visual cada slot fica na posição do equivalente comum
@@ -1167,7 +1236,7 @@
       on: { click: function () { selSlot = sl; drawTab(); setTimeout(function () { var ed = $('#slotEd'); if (ed && ed.scrollIntoView) ed.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 20); },
         dblclick: function () { if (ok) pickerModal(itemsFor(sl), 'Escolher ' + E.SLOT_NAMES[sl], function (x) { if (!x) return; b.eq[sl] = E.newEq(x.id); if (sl === 'weapon' && x.th) delete b.eq.shield; refresh(true); }, { icon: true, cli: E.EXTRA_SLOT[sl] ? true : undefined }); } } },
       side === 'l' ? [txt, ico] : [ico, txt]);
-    if (it) tipOn(bt, function () { return itemTip(it, e); });
+    if (it) tipOn(bt, function () { return itemTip(it, e, sl); });
     return bt;
   }
   function tabEquip(t) {
@@ -1228,7 +1297,7 @@
         if (it.cl && !it.cf && !cli.checked) return;
         n++;
         var d = [];
-        if (it.a) d.push('ATQ ' + it.a); if (it.ma) d.push('ATQM ' + it.ma); if (it.d) d.push('DEF ' + it.d); if (it.md) d.push('MDEF ' + it.md); if (it.sl) d.push('[' + it.sl + ']'); if (it.lv) d.push('Nv ' + it.lv);
+        if (it.a) d.push('ATQ ' + it.a); if (it.ma) d.push('ATQM ' + it.ma); if (it.d) d.push('DEF ' + it.d); if (it.md) d.push('MDEF ' + it.md); if (it.sl && !hasSlTxt(it)) d.push('[' + it.sl + ']'); if (it.lv) d.push('Nv ' + it.lv);
         if (it.w) d.push(Y.weaponNames[it.w] || it.w);
         var row = h('div', { class: 'it', on: { click: function () { onPick(it); closeModal(); } } }, [h('span', { class: 'mcell' }, [opts.mon ? h('span', { class: 'mbox' }, [mobImg(it.id)]) : h('span', { class: 'eqi sm' }, [itemIcon(it.id)]), h('span', null, [it.n]), cliTag(it)]), h('span', { class: 'mut' }, [d.join(' · ')])]);
         if (!opts.mon) tipOn(row, function () { return itemTip(it); });
