@@ -1274,6 +1274,18 @@
     if (it) tipOn(bt, function () { return itemTip(it, e, sl); });
     return bt;
   }
+  // visual no avatar: não há sprite do item vestido, então o ícone fica na posição do corpo; o Visual vence o equipamento comum
+  var WORN = [['headT', 'top'], ['headM', 'mid'], ['headB', 'low'], ['cloak', 'cape']];
+  function wornGear() {
+    var seen = {}, out = [];
+    WORN.forEach(function (w) {
+      var v = b.eq[EQMAP.visual[w[0]]], e = v && Y.itemById[v.id] ? v : b.eq[w[0]], it = e && Y.itemById[e.id];
+      if (!it || seen[it.id]) return; seen[it.id] = 1;
+      var el = h('span', { class: 'worn w-' + w[1] + (e === v ? ' vis' : ''), title: (e === v ? 'Visual: ' : '') + it.n }, [itemIcon(it.id, 'wico')]);
+      out.push(el);
+    });
+    return h('span', { class: 'wornl', 'aria-hidden': 'true' }, out);
+  }
   function tabEquip(t) {
     t.appendChild(stageBar());
     var cl = Y.classById[b.cls];
@@ -1288,7 +1300,7 @@
     var colL = h('div', { class: 'eqcol' }), colR = h('div', { class: 'eqcol' });
     EQL.forEach(function (sl) { colL.appendChild(eqPos(sl, 'l')); });
     EQR.forEach(function (sl) { colR.appendChild(eqPos(sl, 'r')); });
-    var mid = h('div', { class: 'eqmid' }, [h('div', { class: 'eqstage' }, [h('span', { class: 'rune' }), h('span', { class: 'motes' }), h('span', { class: 'ped' }), spriteEl(b.cls, 'big')]),
+    var mid = h('div', { class: 'eqmid' }, [h('div', { class: 'eqstage' }, [h('span', { class: 'rune' }), h('span', { class: 'motes' }), h('span', { class: 'ped' }), spriteEl(b.cls, 'big'), wornGear()]),
       h('div', { class: 'eqname' }, [h('b', null, [b.name || 'Sem nome']), h('small', null, [cl.n + ' · Nv ' + b.lv])])]);
     grid.appendChild(colL); grid.appendChild(mid); grid.appendChild(colR);
     win.appendChild(grid);
@@ -1735,10 +1747,10 @@
   // ---------- aba Simulação ----------
   function monLabel(m) { return m.n + ' (Nv ' + m.lv + ', ' + (m.cls === 2 ? 'MVP' : m.cls === 1 ? 'Miniboss' : 'Comum') + ')'; }
   function autoRot() {
-    var sk = simSkills().filter(function (s) { return s.k !== 'b' && (!s.w || s.w.indexOf(R.wtype) >= 0); });
+    var L = rotLvs(), sk = simSkills().filter(function (s) { return s.k !== 'b' && L[s.id] > 0 && (!s.w || s.w.indexOf(R.wtype) >= 0); });
     var mon = Y.monById[b.sim.mon] || Y.monsters[0]; var n = b.sim.n;
     var sc = sk.map(function (s) {
-      var lv = b.skills[s.id] != null ? b.skills[s.id] : s.max;
+      var lv = L[s.id];
       var st = D.skillDamage(R, b, s, lv, mon, b.sim), tm = D.timing(R, s, lv);
       var cyc = tm.cycle + tm.cd;
       return { s: s, lv: lv, dps: st.perCast * Math.min(s.a || 1, n) / Math.max(0.2, cyc), spps: D.costOf(s, lv) / Math.max(0.2, cyc) };
@@ -1826,18 +1838,23 @@
     // rotação
     var c2 = h('div', { class: 'card' }, [h('h3', null, ['Rotação de habilidades (prioridade de cima para baixo)'])]);
     c2.appendChild(h('div', { class: 'tip' }, ['Sem habilidade disponível (recarga ou SP), o personagem usa o ataque básico.']));
-    var sk = simSkills().filter(function (s) { return s.k !== 'b'; });
-    S.rot = rotAvail();
+    c2.appendChild(h('div', { class: 'tip' }, ['Só entram habilidades aprendidas na Árvore de Habilidades, adicionadas na aba Extra ou concedidas por equipamento/consumível. Nível: até o aprendido. Recarga: intervalo mínimo entre dois usos (0 = só a recarga da própria habilidade).']));
+    var L = rotLvs(), sk = simSkills().filter(function (s) { return s.k !== 'b' && L[s.id] > 0; });
+    rotAvail();
+    S.rot = S.rot || [];
     S.rot.forEach(function (r, i) {
       var s = Y.skills[r.id]; if (!s) return;
-      var nm = h('span', { class: 'mcell', style: 'min-width:260px' }, [(i + 1) + '. ', SKA[s.id] ? skillIcon(SKA[s.id]) : null, s.n]);
-      if (SKA[s.id]) skTip(nm, SKA[s.id], r.lv, s.max);
-      c2.appendChild(h('div', { class: 'row' }, [nm,
-        h('input', { class: 'num', type: 'number', min: 1, max: s.max, value: r.lv, style: 'width:56px', on: { change: function (e) { r.lv = Math.max(1, Math.min(s.max, +e.target.value || 1)); save(); } } }),
+      var mx = L[s.id] || 0, nm = h('span', { class: 'mcell', style: 'min-width:260px' + (mx ? '' : ';opacity:.5') }, [(i + 1) + '. ', SKA[s.id] ? skillIcon(SKA[s.id]) : null, s.n, mx ? null : h('small', { class: 'mut' }, [' · não aprendida (fica fora da simulação)'])]);
+      if (SKA[s.id]) skTip(nm, SKA[s.id], r.lv || 1, s.max);
+      var lvSel = h('select', { title: 'Nível usado na rotação', disabled: !mx, on: { change: function (e) { r.lv = +e.target.value; save(); } } },
+        (mx ? Array.apply(null, Array(mx)).map(function (x, k) { return k + 1; }).reverse() : [r.lv || 1]).map(function (v) { return h('option', { value: v, selected: v === r.lv }, ['Nv ' + v]); }));
+      var cdIn = h('input', { class: 'num', type: 'number', min: 0, step: 0.5, value: r.cd || 0, style: 'width:64px', title: 'Recarga de uso em segundos (0 = automática)',
+        on: { change: function (e) { r.cd = Math.max(0, Math.min(600, +e.target.value || 0)); if (!r.cd) delete r.cd; save(); } } });
+      c2.appendChild(h('div', { class: 'row' }, [nm, lvSel, h('label', { class: 'inl', title: 'Recarga de uso em segundos (0 = automática)' }, ['Recarga ', cdIn, ' s']),
         h('button', { on: { click: function () { if (i > 0) { var x = S.rot[i - 1]; S.rot[i - 1] = r; S.rot[i] = x; refresh(true); } } } }, ['↑']),
         h('button', { on: { click: function () { S.rot.splice(i, 1); refresh(true); } } }, ['×'])]));
     });
-    var add = h('select', { on: { change: function (e) { if (e.target.value) { var s = Y.skills[e.target.value]; S.rot.push({ id: s.id, lv: b.skills[s.id] != null ? b.skills[s.id] : s.max }); refresh(true); } } } }, [h('option', { value: '' }, ['+ adicionar habilidade'])]);
+    var add = h('select', { on: { change: function (e) { if (e.target.value) { var s = Y.skills[e.target.value]; S.rot.push({ id: s.id, lv: L[s.id] || 1 }); refresh(true); } } } }, [h('option', { value: '' }, [sk.length ? '+ adicionar habilidade' : 'Nenhuma habilidade de dano aprendida'])]);
     var GS = grantSrc(), skC = sk.filter(function (s) { return !GS[s.id]; }), skG = sk.filter(function (s) { return GS[s.id]; });
     skC.forEach(function (s) { add.appendChild(h('option', { value: s.id }, [s.n])); });
     if (skG.length) add.appendChild(h('optgroup', { label: 'Concedidas por equipamento/consumível' }, skG.map(function (s) { return h('option', { value: s.id }, [s.n + ' · Nv ' + GS[s.id].lv + ' (' + GS[s.id].src + ')']); })));
@@ -2030,10 +2047,19 @@
     Object.keys(GS).forEach(function (id) { base.push(Y.skills[id]); if (Y.skills[id].k !== 'b') b.skills[id] = GS[id].lv; });
     return base;
   }
-  // rotação sem as habilidades que deixaram de estar disponíveis (item retirado, condição não atendida)
+  // nível que a rotação pode usar: aprendido na árvore, adicionado na aba Extra ou concedido por item/consumível (0 = indisponível)
+  function rotLvs() {
+    var GS = grantSrc(), out = {}, xs = b.xsk || {};
+    simSkills().forEach(function (s) {
+      if (GS[s.id]) { out[s.id] = GS[s.id].lv; return; }
+      var ae = SKA[s.id]; out[s.id] = ae ? Math.min(s.max, Math.max(b.tree[ae] || 0, xs[ae] || 0)) : 0;
+    });
+    return out;
+  }
+  // rotação sem as habilidades indisponíveis (não aprendida, item retirado); o nível fica no máximo aprendido
   function rotAvail() {
-    var ok = {}, GS = grantSrc(); simSkills().forEach(function (s) { ok[s.id] = 1; });
-    return (b.sim.rot || []).filter(function (r) { if (GS[r.id] && r.lv > GS[r.id].lv) r.lv = GS[r.id].lv; return ok[r.id]; });
+    var L = rotLvs();
+    return (b.sim.rot || []).filter(function (r) { var m = L[r.id] || 0; if (m && (!r.lv || r.lv > m)) r.lv = m; return m > 0; });
   }
   // buffs concedidos (por item, Ascensão ou à mão) entram no cálculo se a árvore não tiver o buff ligado
   E.hooks.push(function (bb, B, notes, add) {

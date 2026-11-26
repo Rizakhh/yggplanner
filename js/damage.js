@@ -229,7 +229,7 @@
     var maxT = cfg.maxT || 300, farm = !!cfg.farm;
     var mobs = [];
     for (var i = 0; i < n; i++) mobs.push({ hp: mon.hp, alive: true, next: rnd() * (cfg.mobDelay || 1.5) });
-    var rot = (cfg.rot || []).map(function (x) { var s = Y.skills[x.id]; return s ? { s: s, lv: Math.min(x.lv || s.max, s.max), ready: 0 } : null; }).filter(Boolean);
+    var rot = (cfg.rot || []).map(function (x) { var s = Y.skills[x.id]; return s ? { s: s, lv: Math.min(x.lv || s.max, s.max), ucd: +x.cd || 0, ready: 0 } : null; }).filter(Boolean);
     var stat = {};
     rot.forEach(function (r) { stat[r.s.id] = D.skillDamage(R, b, r.s, r.lv, mon, cfg); });
     var basic = D.skillDamage(R, b, D.BASIC, 1, mon, cfg);
@@ -298,7 +298,7 @@
         if (m.hp <= 0 && m.alive) { m.alive = false; kills++; }
       });
       if (act.cost) { sp -= act.cost; spUsed += act.cost; }
-      if (act.ro) act.ro.ready = t + dur + act.tm.cd;
+      if (act.ro) act.ro.ready = Math.max(t + dur + act.tm.cd, t + act.ro.ucd); // recarga de uso definida na rotação
       casts++;
       var ps = perSkill[act.s.id] || (perSkill[act.s.id] = { n: act.s.n, casts: 0, dmg: 0 });
       ps.casts++; ps.dmg += tdt;

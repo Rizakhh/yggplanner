@@ -4,6 +4,25 @@
 window.YGG = window.YGG || {};
 YGG.changelog = [
   {
+    v: '0.2.12', d: '2026-11-26', t: 'Visual no avatar, rotação por nível e gemas de chefe',
+    g: [
+      ['Equipamentos', [
+        'O avatar da aba Equipamentos mostra o que está vestido na cabeça (topo, meio e baixo) e na capa. Se houver item na aba Visual, ele aparece no lugar do equipamento comum (borda dourada).',
+        'Não há imagem do item vestido no personagem, então aparece o ícone do item na posição do corpo.',
+        'Batina Angelical (todas as versões) agora tem 1 slot de carta.'
+      ]],
+      ['Cartas e gemas', [
+        'Cerca de 110 cartas de MVP e miniboss estavam marcadas como cartas comuns e apareciam na gema normal (ex.: Faraó, Flor do Luar, Bafomé, Drácula, Osíris, Orc Herói, Besouro-Ladrão Dourado e as versões Seladas, Espaciais e do Pesadelo). Agora só aparecem na gema de miniboss/MVP.',
+        'Gema que não cabe mais no slot fica fora do cálculo.'
+      ]],
+      ['Simulação', [
+        'A rotação só aceita habilidades aprendidas na Árvore de Habilidades, adicionadas em Extra ou concedidas por equipamento/consumível. As que deixarem de estar aprendidas ficam acinzentadas e fora da simulação.',
+        'Cada habilidade da rotação tem nível (até o aprendido) e recarga de uso: o intervalo mínimo entre dois usos.',
+        'A rotação automática usa só as habilidades aprendidas, no nível aprendido.'
+      ]]
+    ]
+  },
+  {
     v: '0.2.11-hf3', d: '2026-11-25', t: 'Ignorar defesa e dano por alvo',
     g: [
       ['Equipamentos', [

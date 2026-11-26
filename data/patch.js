@@ -46,6 +46,42 @@ window.YGG = window.YGG || {};
     Object.keys(p).forEach(function (k) { if (p[k] === null) delete it[k]; else it[k] = p[k]; });
   });
 
+  // Classe da carta para as gemas (0 normal, 1 miniboss, 2 MVP). A geração só reconhecia o nome exato do monstro,
+  // então variantes (Selada, Espacial, Sombrio...) e grafias diferentes ficavam como normais.
+  var KC = {
+    2: [1280203, 1280204, 1280205, 27212, 4504, 4503, 4498, 4481, 4487, 4602, 4635, 27383, 4134, 4483, 27104, 4144, 4647, 4236, 4495, 4652,
+      4342, 4403, 27126, 300195, 4143, 4492, 4650, 4493, 4651, 27294, 4496, 4535, 4536, 4648, 27113, 300151, 300021, 4399,
+      4671, 4680, 4681, 4682],
+    1: [4395, 4396, 4397, 4398, 4645, 27165, 27339]
+  };
+  var KM = {};
+  Object.keys(KC).forEach(function (k) { KC[k].forEach(function (id) { KM[id] = +k; }); });
+  (Y.items || []).forEach(function (it) {
+    if (it.id in KM && it.c === 'k') it.k = KM[it.id];
+    if (/^Batina Angelical/.test(it.n) && !it.sl) it.sl = 1; // Batina Angelical (todas as versões): 1 slot de carta
+  });
+  // chefes que não estão no banco de monstros do YggIdle (nome da carta sem "Carta ")
+  var KN = {
+    2: ['Besouro-Ladrão Dourado', 'Lorde Seyren', 'Algoz Eremes', 'Mestre-ferreiro Howard', 'Sumo Sacerdotisa Margaretha', 'Arquimaga Kathryne',
+      'Atirador de Elite Cecil', 'Egnigem Cenia [Chefe]', 'Shura Chen', 'Trovador Alphoccio', 'Sicário Eremes', 'Arcebispa Margaretha',
+      'Sentinela Cecil', 'Mecânico Howard', 'Arcana Kathryne', 'Cavaleiro Rúnico Seyren', 'Musa Trentini', 'Entweihen Crothen', 'Leak',
+      'Rainha Scaraba Dourada', 'Bijou', 'Bangungot', 'Bakonawa', 'Buwaya', 'Ceifador Ankou', 'Morroc Ferido'],
+    1: ['Libélula', 'Lobo Errante', 'Sapo-Cururu', 'Vocal', 'Líder Cobold', 'Líder Goblin', 'Barão Coruja', 'Duque Coruja', 'Cavaleiro do Abismo',
+      'Gato de Nove Caudas', 'Esqueleto General', 'Zumbi Mestre', 'Dragão Mutante', 'Ilusão das Trevas', 'Grifo', 'Executor', 'Cavaleiro Sanguinário']
+  };
+  var KB = {};
+  Object.keys(KN).forEach(function (k) { KN[k].forEach(function (n) { KB[n] = +k; }); });
+  var cardBase = function (n) { return n.replace(/^Carta /i, '').replace(/ selad[ao]$/i, '').toLowerCase(); };
+  var CARDS = (Y.items || []).filter(function (it) { return it.c === 'k'; }), SEAL = {};
+  CARDS.forEach(function (it) { var n = it.n.replace(/^Carta /, ''); if (!it.k && KB[n]) it.k = KB[n]; });
+  // carta Selada só existe para chefes: a selada e a comum do mesmo monstro vão para a gema de miniboss/MVP
+  CARDS.forEach(function (it) { if (/ selad[ao]$/i.test(it.n)) SEAL[cardBase(it.n)] = Math.max(SEAL[cardBase(it.n)] || 0, it.k || 0); });
+  CARDS.forEach(function (it) { var b0 = cardBase(it.n); if (b0 in SEAL && !/ selad[ao]$/i.test(it.n) && it.k) SEAL[b0] = Math.max(SEAL[b0], it.k); });
+  CARDS.forEach(function (it) {
+    var b0 = cardBase(it.n), sealed = / selad[ao]$/i.test(it.n);
+    if (b0 in SEAL && !it.k && (sealed || b0 !== 'egnigem cenia')) it.k = SEAL[b0] || 2; // a Egnigem Cenia comum é monstro normal; o chefe é a [Chefe]
+  });
+
   // ---------- habilidades que faltavam no catálogo (concedidas pela Ascensão da Cigana) ----------
   var SKD = Y.skd = Y.skd || {};
   SKD.WM_LESSON = SKD.WM_LESSON || { n: 'Domínio Musical', i: 2412, t: 'Passiva', d: 'Aumenta o SP máx. e a regeneração de SP a cada 10 segundos enquanto imóvel.', c: ['SP máx.', 'Regen. de SP'],
