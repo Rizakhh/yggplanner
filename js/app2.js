@@ -143,8 +143,9 @@
       var e = o.eq[sl]; if (!e) return;
       var it0 = Y.itemById[e.id];
       if (it0 && !E.itemFits(sl, it0)) { delete o.eq[sl]; if (!o.eq[it0.only]) { o.eq[it0.only] = e; sl = it0.only; } else return; } // lado errado: passa para o lado certo se estiver livre
-      if (e.cards) e.cards = e.cards.map(function (cid) { return cid && E.cardFits(sl, cid) ? cid : 0; });
-      if (e.gem) e.gem = e.gem.map(function (cid, gi) { return cid && E.cardFits(sl, cid, gi) ? cid : 0; });
+      var cs = E.cardSlot(sl, e);
+      if (e.cards) e.cards = e.cards.map(function (cid) { return cid && E.cardFits(cs, cid) ? cid : 0; });
+      if (e.gem) e.gem = e.gem.map(function (cid, gi) { return cid && E.cardFits(cs, cid, gi) ? cid : 0; });
     });
     // remove da árvore o que não pertence mais à classe (ex.: Adoramus, que só vem por item) e limita ao nível máximo
     var mx = {}; (Y.trees[o.cls] || []).forEach(function (tb) { tb.sk.forEach(function (s) { mx[s[0]] = s[1]; }); });
@@ -271,8 +272,32 @@
   }
   function merge(d, p) { if (isObj(d) && isObj(p)) { Object.keys(p).forEach(function (k) { d[k] = merge(d[k], p[k]); }); return d; } return p; }
   function b64u(u8) { var s = ''; for (var i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
-  function unb64u(s) { var t = atob(s.replace(/-/g, '+').replace(/_/g, '/')), u = new Uint8Array(t.length); for (var i = 0; i < t.length; i++) u[i] = t.charCodeAt(i); return u; }
-  function zpipe(u8, C) { return new Response(new Blob([u8]).stream().pipeThrough(new C('deflate-raw'))).arrayBuffer().then(function (a) { return new Uint8Array(a); }); }
+  function unb64u(s) {
+    s = s.replace(/-/g, '+').replace(/_/g, '/').replace(/[^A-Za-z0-9+/]/g, '');
+    if (s.length % 4 === 1) throw new Error('link incompleto (cortado ao copiar ou colar)');
+    var t = atob(s), u = new Uint8Array(t.length); for (var i = 0; i < t.length; i++) u[i] = t.charCodeAt(i); return u;
+  }
+  // deflate-raw do navegador; sem suporte (Safari < 16.4, Chrome < 103, Firefox < 113) usa o pako, carregado só quando precisa
+  var pakoP = null;
+  function pako() {
+    if (window.pako) return Promise.resolve(window.pako);
+    return pakoP || (pakoP = new Promise(function (ok, no) {
+      var sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js';
+      sc.onload = function () { window.pako ? ok(window.pako) : no(new Error('pako')); };
+      sc.onerror = function () { pakoP = null; no(new Error('sem suporte a compressão neste navegador')); };
+      document.head.appendChild(sc);
+    }));
+  }
+  // dir: 'in' descomprime, 'out' comprime
+  function zpipe(u8, dir) {
+    var inflate = dir === 'in', K = inflate ? window.DecompressionStream : window.CompressionStream, native = !!K;
+    return Promise.resolve().then(function () {
+      return new Response(new Blob([u8]).stream().pipeThrough(new K('deflate-raw'))).arrayBuffer().then(function (a) { return new Uint8Array(a); });
+    }).catch(function (e) {
+      if (native && inflate && !/deflate-raw|not supported|unsupported|invalid.*format/i.test((e && e.message) || '')) throw new Error('link incompleto ou corrompido');
+      return pako().then(function (P) { try { return inflate ? P.inflateRaw(u8) : P.deflateRaw(u8); } catch (x) { throw new Error('link incompleto ou corrompido'); } });
+    });
+  }
   function packB(o) { o = cl(o); if (o.stages) o.stages[o.stage] = null; return diff(o, baseFor(o)) || {}; }
   function unpackB(p) { return merge(baseFor(p), p); }
   // formato "y": como o "z", mas com nomes de campo curtos e as linhas de bônus como listas [t,p,v,d]
@@ -303,24 +328,67 @@
   }
   function shortCode(o) {
     var js = JSON.stringify(shrinkB(packB(o), true));
-    if (!window.CompressionStream) return Promise.resolve('x' + b64u(new TextEncoder().encode(js)));
-    return zpipe(new TextEncoder().encode(js), CompressionStream).then(function (u) { return 'y' + b64u(u); });
+    var raw = new TextEncoder().encode(js);
+    return zpipe(raw, 'out').then(function (u) { return 'y' + b64u(u); }, function () { return 'x' + b64u(raw); });
   }
-  function readCode(s) {
+  function readCode(s) { return Promise.resolve().then(function () { return readCode0(s); }).catch(function (e) { if (e instanceof SyntaxError) throw new Error('link incompleto ou corrompido'); throw e; }); } // qualquer erro vira rejeição, nunca derruba a página
+  function readCode0(s) {
     s = (s || '').trim(); var m = s.match(/#b=([^&\s]+)/); if (m) s = decodeURIComponent(m[1]);
-    if (s[0] === 'z') return zpipe(unb64u(s.slice(1)), DecompressionStream).then(function (u) { return unpackB(JSON.parse(new TextDecoder().decode(u))); });
+    if (/^(https?:\/\/)?(da\.gd|spoo\.me)\//i.test(s)) throw new Error('link curto: abra-o no navegador para carregar a build');
+    if (s[0] === 'z') return zpipe(unb64u(s.slice(1)), 'in').then(function (u) { return unpackB(JSON.parse(new TextDecoder().decode(u))); });
     if (s[0] === 'j') return Promise.resolve(unpackB(JSON.parse(new TextDecoder().decode(unb64u(s.slice(1))))));
-    if (s[0] === 'y') return zpipe(unb64u(s.slice(1)), DecompressionStream).then(function (u) { return unpackB(growB(JSON.parse(new TextDecoder().decode(u)), true)); });
+    if (s[0] === 'y') return zpipe(unb64u(s.slice(1)), 'in').then(function (u) { return unpackB(growB(JSON.parse(new TextDecoder().decode(u)), true)); });
     if (s[0] === 'x') return Promise.resolve(unpackB(growB(JSON.parse(new TextDecoder().decode(unb64u(s.slice(1)))), true)));
     return Promise.resolve().then(function () { return fromCode(s); });
   }
   function baseUrl() { return location.href.split('#')[0]; }
-  function copyLink(o) {
-    return shortCode(o).then(function (c) {
-      var u = baseUrl() + '#b=' + c;
-      navigator.clipboard && navigator.clipboard.writeText(u).then(function () { toast('Link copiado (' + u.length + ' caracteres)'); }, function () { prompt('Copie o link:', u); });
-      return c;
+  // ---------- encurtador ----------
+  // da.gd e spoo.me aceitam chamada direta do navegador (CORS liberado) e guardam o link inteiro, com o #b=.
+  // Se os dois falharem, fica o link longo. Links já encurtados ficam em cache neste navegador.
+  var SHK = 'yggplanner.short';
+  function withTimeout(p, ms) { return Promise.race([p, new Promise(function (ok, no) { setTimeout(function () { no(new Error('tempo esgotado')); }, ms); })]); }
+  var SHORTENERS = [
+    function (u) { return fetch('https://da.gd/s?url=' + encodeURIComponent(u)).then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); }).then(function (t) { t = t.trim(); if (!/^https:\/\/da\.gd\/[\w-]+$/.test(t)) throw new Error('resposta'); return t; }); },
+    function (u) { return fetch('https://spoo.me/', { method: 'POST', headers: { 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'url=' + encodeURIComponent(u) }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (j) { var t = String(j.short_url || '').replace(/^http:/, 'https:'); if (!/^https:\/\/spoo\.me\/[\w-]+$/.test(t)) throw new Error('resposta'); return t; }); }
+  ];
+  function shortUrl(u) {
+    var cache = {}; try { cache = JSON.parse(localStorage.getItem(SHK) || '{}') || {}; } catch (e) { }
+    if (cache[u]) return Promise.resolve(cache[u]);
+    var i = 0;
+    function next() {
+      if (i >= SHORTENERS.length) return Promise.reject(new Error('encurtadores indisponíveis'));
+      return withTimeout(SHORTENERS[i++](u), 7000).catch(next);
+    }
+    return next().then(function (t) {
+      try { var ks = Object.keys(cache); if (ks.length >= 40) ks.slice(0, ks.length - 39).forEach(function (k) { delete cache[k]; }); cache[u] = t; localStorage.setItem(SHK, JSON.stringify(cache)); } catch (e) { }
+      return t;
     });
+  }
+  function copyText(t, inp) {
+    function fb() { if (inp) { inp.focus(); inp.select(); try { if (document.execCommand('copy')) { toast('Link copiado'); return; } } catch (e) { } } toast('Selecione e copie o link'); }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(function () { toast('Link copiado (' + t.length + ' caracteres)'); }, fb); else fb();
+  }
+  // gera o link, mostra na hora o longo e troca pelo curto quando o encurtador responder
+  function copyLink(o) {
+    var inp = h('input', { readonly: true, value: 'Gerando…', style: 'width:100%' });
+    inp.addEventListener('focus', function () { inp.select(); });
+    var st = h('div', { class: 'tip' }, ['Encurtando o link…']), cur = '';
+    var bt = h('button', { class: 'pri' }, ['Copiar']); bt.disabled = true;
+    bt.addEventListener('click', function () { copyText(cur, inp); });
+    var cl = h('button', null, ['Fechar']); cl.addEventListener('click', function () { closeModal(); });
+    openModal(h('div', { class: 'linkbox' }, [h('h3', null, ['Link da build']), inp, st, h('div', { class: 'row' }, [bt, cl])]));
+    return shortCode(o).then(function (c) {
+      var long = baseUrl() + '#b=' + c;
+      cur = long; inp.value = long; bt.disabled = false;
+      shortUrl(long).then(function (sh) {
+        cur = sh; inp.value = sh; st.textContent = 'Link curto (' + sh.replace(/^https:\/\//, '').split('/')[0] + '): abre a build completa em qualquer navegador.';
+        copyText(sh, inp);
+      }, function () {
+        st.textContent = 'Encurtador indisponível agora: use o link longo (' + long.length + ' caracteres) e copie inteiro, sem cortar o final.';
+        copyText(long, inp);
+      });
+      return c;
+    }, function (e) { st.textContent = 'Não foi possível gerar o link: ' + e.message; throw e; });
   }
   function toCode(o) { return btoa(unescape(encodeURIComponent(JSON.stringify(o)))); }
   function fromCode(s) { s = s.trim(); var m = s.match(/#b=([^&\s]+)/); if (m) s = decodeURIComponent(m[1]); if (s[0] === '{') return JSON.parse(s); return JSON.parse(decodeURIComponent(escape(atob(s)))); }
@@ -398,7 +466,7 @@
     document.addEventListener('keydown', function (e) { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); saveToLib(false); } });
     $('#btnExport').onclick = openExport; $('#btnImport').onclick = openImport;
     $('#btnShare').onclick = function () {
-      copyLink(b).then(function (c) { history.replaceState(null, '', '#b=' + c); }, function (e) { toast('Não foi possível gerar o link: ' + e.message); });
+      copyLink(b).catch(function () { });
     };
     document.querySelectorAll('#tabs button').forEach(function (bt) {
       bt.onclick = function () { tab = bt.dataset.tab; document.querySelectorAll('#tabs button').forEach(function (x) { x.classList.toggle('on', x === bt); }); drawTab(); };
@@ -1136,6 +1204,21 @@
   var pickFilter = { q: '', cls: true, kind: 'item', cli: false };
   function cliTag(it) { return !it.cl ? null : h('span', { class: 'clitag' + (it.cf ? ' cf' : ''), title: it.cf ? 'Item próprio do YggIdle, lido do cliente do jogo' : 'Item que está no cliente do jogo mas não aparece na wiki: pode não existir no servidor' }, [it.cf ? 'YggIdle · cliente' : 'só no cliente']); }
   function slotAllowed(sl) { if (sl === 'shield' && b.eq.weapon && (Y.itemById[b.eq.weapon.id] || {}).th) return false; return true; }
+  // Escudo vira "Mão esquerda" quando a classe pode usar duas armas
+  function slotName(sl) {
+    if (sl !== 'shield') return E.SLOT_NAMES[sl];
+    var e = b.eq.shield, it = e && Y.itemById[e.id];
+    return it && it.c === 'w' ? 'Mão esquerda' : E.dualRule(b) ? 'Escudo / Mão esquerda' : E.SLOT_NAMES[sl];
+  }
+  // arma na mão esquerda que não vale agora (classe, perícia ou arma da direita)
+  function leftBad() { var e = b.eq.shield, it = e && Y.itemById[e.id]; return !!(it && it.c === 'w' && !E.leftOk(b, it)); }
+  function leftWhy() {
+    var d = E.dualRule(b), rw = b.eq.weapon && Y.itemById[b.eq.weapon.id], it = Y.itemById[b.eq.shield.id];
+    if (!d) return b.cls === 'nin' ? 'Aprenda Perícia com a Mão Esquerda para usar a segunda adaga.' : 'Esta classe não usa duas armas.';
+    if (d.types.indexOf(it.w) < 0) return 'Esta classe não usa ' + it.w + ' na mão esquerda.';
+    if (!rw || d.types.indexOf(rw.w) < 0) return 'Para usar duas armas, a mão direita precisa de ' + (b.cls === 'nin' ? 'uma adaga' : 'adaga, espada de 1 mão ou machado de 1 mão') + '.';
+    return '';
+  }
   function usable(it) {
     var cl = Y.classById[b.cls];
     if (it.lv && it.lv > b.lv) return false;
@@ -1210,8 +1293,9 @@
   function itemFxTip(it, e, sl) {
     var ctx = { b: b, ref: e.ref || 0, names: (R.G && R.G.names) || {} }, blocks = [], used = {};
     blocks.push(fxBlock(it.n, fxList(it.fx, ctx), 'base', used));
-    var cards = (e.cards || []).filter(function (cid) { return cid && E.cardFits(sl, cid); }),
-      gems = (e.gem || []).map(function (cid, gi) { return cid && E.cardFits(sl, cid, gi) ? cid : 0; }).filter(Boolean),
+    var cs = E.cardSlot(sl, e);
+    var cards = (e.cards || []).filter(function (cid) { return cid && E.cardFits(cs, cid); }),
+      gems = (e.gem || []).map(function (cid, gi) { return cid && E.cardFits(cs, cid, gi) ? cid : 0; }).filter(Boolean),
       ench = E.canEnch(it) ? (e.ench || []).filter(function (cid) { return cid && Y.itemById[cid] && Y.itemById[cid].s === 'ench'; }) : [];
     cards.concat(gems, ench).forEach(function (cid, i) {
       var c = Y.itemById[cid]; if (!c) return;
@@ -1263,13 +1347,13 @@
     var e = b.eq[sl], it = e && Y.itemById[e.id], rar = e ? Y.bonus.rarities[e.rar || 0] : null, ok = slotAllowed(sl);
     var ico = h('span', { class: 'eqi' }, [it ? itemIcon(it.id) : h('span', { class: 'eqph eq-' + sl })]);
     var cards = e && (e.cards || []).filter(Boolean).length;
-    var txt = h('span', { class: 'eqt' }, [h('small', null, [E.SLOT_NAMES[sl]]),
+    var txt = h('span', { class: 'eqt' }, [h('small', null, [slotName(sl)]),
       h('b', { style: rar ? 'color:' + rar.color : '' }, [it ? (e.ref ? '+' + e.ref + ' ' : '') + it.n : ok ? '—' : 'bloqueado (2 mãos)']),
       it ? h('em', null, [E.EXTRA_SLOT[sl] ? (it.jl ? jlRarName(it, e.ref || 0) : E.EXTRA_SLOT[sl] === 'shadow' ? 'Sombrio' : 'Visual') : rar.n + ' · T' + e.tier + (cards ? ' · ' + cards + ' carta(s)' : '') + ((e.gem || []).filter(Boolean).length ? ' · gema' : '') + (E.canEnch(it) && (e.ench || [])[0] && Y.itemById[e.ench[0]] ? ' · ' + Y.itemById[e.ench[0]].n : '')]) : null]);
-    var warn = sl === 'weapon' && it && it.w && Y.classById[b.cls].wp.indexOf(it.w) < 0;
+    var warn = sl === 'weapon' && it && it.w && Y.classById[b.cls].wp.indexOf(it.w) < 0 || sl === 'shield' && leftBad();
     var bt = h('button', { class: 'eqs ' + side + (sl === selSlot ? ' sel' : '') + (it ? ' has' : '') + (ok ? '' : ' off') + (warn ? ' warnb' : ''),
       on: { click: function () { selSlot = sl; drawTab(); setTimeout(function () { var ed = $('#slotEd'); if (ed && ed.scrollIntoView) ed.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 20); },
-        dblclick: function () { if (ok) pickerModal(itemsFor(sl), 'Escolher ' + E.SLOT_NAMES[sl], function (x) { if (!x) return; b.eq[sl] = E.newEq(x.id); if (sl === 'weapon' && x.th) delete b.eq.shield; refresh(true); }, { icon: true, cli: E.EXTRA_SLOT[sl] ? true : undefined }); } } },
+        dblclick: function () { if (ok) pickerModal(itemsFor(sl), 'Escolher ' + slotName(sl), function (x) { if (!x) return; b.eq[sl] = E.newEq(x.id); if (sl === 'weapon' && x.th) delete b.eq.shield; refresh(true); }, { icon: true, cli: E.EXTRA_SLOT[sl] ? true : undefined }); } } },
       side === 'l' ? [txt, ico] : [ico, txt]);
     if (it) tipOn(bt, function () { return itemTip(it, e, sl); });
     return bt;
@@ -1317,10 +1401,11 @@
     t.appendChild(extraEditor());
   }
   function itemsFor(sl) {
-    var ty = E.SLOT_TYPE[sl];
+    var ty = E.SLOT_TYPE[sl], dr = sl === 'shield' ? E.dualRule(b) : null;
     return Y.items.filter(function (it) {
       if (sl === 'weapon') return it.c === 'w';
       if (sl === 'ammo') return it.c === 'm';
+      if (sl === 'shield' && it.c === 'w') return !!dr && dr.types.indexOf(it.w) >= 0;
       return it.c === 'a' && it.s === ty && E.itemFits(sl, it);
     });
   }
@@ -1406,11 +1491,18 @@
     return h('div', { class: 'fx' }, ct ? [h('span', { class: 'fxc' }, [ct.replace(/[:.]\s*$/, '') + ':']), ' ' + txt] : [txt]);
   }
   function slotEditor(sl) {
-    var c = h('div', { class: 'card' }, [h('h3', null, ['Editar: ' + E.SLOT_NAMES[sl]])]);
+    var c = h('div', { class: 'card' }, [h('h3', null, ['Editar: ' + slotName(sl)])]);
     if (!slotAllowed(sl)) { c.appendChild(h('div', { class: 'mut' }, ['Escudo indisponível com arma de duas mãos.'])); return c; }
     var e = b.eq[sl], it = e && Y.itemById[e.id];
+    if (sl === 'shield' && it && it.c === 'w') {
+      var dr = E.dualRule(b), why = leftBad() ? leftWhy() : '';
+      c.appendChild(h('div', { class: why ? 'warn' : 'tip' }, [why ? 'Arma da mão esquerda inativa: ' + why
+        : 'Duas armas: o ataque básico acerta com as duas mãos (direita ' + dr.rh + '%, esquerda ' + dr.lh + '%). As habilidades usam só a mão direita; cartas e efeitos da esquerda valem para tudo.']));
+    } else if (sl === 'shield' && E.dualRule(b)) {
+      c.appendChild(h('div', { class: 'tip' }, ['Este slot também aceita uma ' + (b.cls === 'nin' ? 'adaga' : 'adaga, espada de 1 mão ou machado de 1 mão') + ' na mão esquerda.']));
+    }
     c.appendChild(h('div', { class: 'row' }, [
-      h('button', { class: 'pri', on: { click: function () { pickerModal(itemsFor(sl), 'Escolher ' + E.SLOT_NAMES[sl], function (x) { if (!x) return; b.eq[sl] = E.newEq(x.id); if (sl === 'weapon' && x.th) delete b.eq.shield; refresh(true); }, { icon: true, cli: E.EXTRA_SLOT[sl] ? true : undefined }); } } }, [it ? 'Trocar item' : 'Escolher item']),
+      h('button', { class: 'pri', on: { click: function () { pickerModal(itemsFor(sl), 'Escolher ' + slotName(sl), function (x) { if (!x) return; b.eq[sl] = E.newEq(x.id); if (sl === 'weapon' && x.th) delete b.eq.shield; refresh(true); }, { icon: true, cli: E.EXTRA_SLOT[sl] ? true : undefined }); } } }, [it ? 'Trocar item' : 'Escolher item']),
       it ? h('button', { on: { click: function () { delete b.eq[sl]; refresh(true); } } }, ['Remover']) : null,
       it ? h('span', { class: 'eqi lg' }, [itemIcon(it.id)]) : null, it ? h('b', null, [it.n]) : null, it ? cliTag(it) : null]));
     if (!it) return c;
@@ -1464,7 +1556,7 @@
       e.cards = e.cards || [];
       for (var i = 0; i < nsl; i++) (function (i) {
         c.appendChild(h('div', { class: 'row' }, [h('span', { class: 'mut' }, ['Slot ' + (i + 1)]),
-          h('button', { on: { click: function () { pickerModal(cardsFor(sl, false), 'Carta (slot ' + (i + 1) + ')', function (x) { e.cards[i] = x ? x.id : 0; refresh(true); }, { clear: true, usable: false }); } } }, [e.cards[i] ? h('span', { class: 'mcell' }, [itemIcon(e.cards[i]), itemLabel(e.cards[i])]) : 'Escolher carta'])]));
+          h('button', { on: { click: function () { pickerModal(cardsFor(E.cardSlot(sl, e), false), 'Carta (slot ' + (i + 1) + ')', function (x) { e.cards[i] = x ? x.id : 0; refresh(true); }, { clear: true, usable: false }); } } }, [e.cards[i] ? h('span', { class: 'mcell' }, [itemIcon(e.cards[i]), itemLabel(e.cards[i])]) : 'Escolher carta'])]));
       })(i);
     }
     if (E.GEM_SLOTS[sl]) {
@@ -1472,7 +1564,7 @@
       e.gem = e.gem || [0, 0];
       [0, 1].forEach(function (gi) {
         c.appendChild(h('div', { class: 'row' }, [h('span', { class: 'mut' }, [gi ? 'Gema (miniboss/MVP)' : 'Gema (normal)']),
-          h('button', { on: { click: function () { pickerModal(cardsFor(sl, true, gi), 'Gema ' + (gi ? 'de miniboss/MVP' : 'normal'), function (x) { e.gem[gi] = x ? x.id : 0; refresh(true); }, { clear: true, usable: false }); } } }, [e.gem[gi] ? h('span', { class: 'mcell' }, [itemIcon(e.gem[gi]), itemLabel(e.gem[gi])]) : 'Escolher gema'])]));
+          h('button', { on: { click: function () { pickerModal(cardsFor(E.cardSlot(sl, e), true, gi), 'Gema ' + (gi ? 'de miniboss/MVP' : 'normal'), function (x) { e.gem[gi] = x ? x.id : 0; refresh(true); }, { clear: true, usable: false }); } } }, [e.gem[gi] ? h('span', { class: 'mcell' }, [itemIcon(e.gem[gi]), itemLabel(e.gem[gi])]) : 'Escolher gema'])]));
       });
     }
     if (E.canEnch(it)) {
@@ -1776,7 +1868,7 @@
       h('div', { class: 'ssfig me' }, [h('span', { class: 'ped' }), spriteEl(b.cls, 'big'), h('div', { class: 'ssbar' }, [h('b', null, [Y.classById[b.cls].n + ' · Nv ' + b.lv]), h('i', { class: 'hp' }), h('i', { class: 'sp' }), h('small', null, ['HP ' + fmt(R.hp) + ' · SP ' + fmt(R.sp)])])]),
       h('div', { class: 'ssvs' }, [h('span', null, ['VS'])]),
       mon ? h('div', { class: 'ssfig foe' + (mon.cls === 2 ? ' mvp' : mon.cls === 1 ? ' mini' : '') }, [h('span', { class: 'ped' }),
-        basic ? h('div', { class: 'ssdmg' }, [h('b', null, [fmt(basic.avg)]), h('small', null, ['golpe básico · ' + fmt(basic.min) + '–' + fmt(basic.max) + (basic.critCh ? ' · crít. ' + fmt(basic.critAvg) : '')])]) : null,
+        basic ? h('div', { class: 'ssdmg' }, [h('b', null, [fmt(basic.avg)]), h('small', null, ['golpe básico · ' + fmt(basic.min) + '–' + fmt(basic.max) + (basic.critCh ? ' · crít. ' + fmt(basic.critAvg) : '') + (basic.dual ? ' · direita ' + fmt(basic.right.avg) + ' (' + basic.right.pct + '%) + esquerda ' + fmt(basic.left.avg) + ' (' + basic.left.pct + '%)' : '')])]) : null,
         mobImg(mon.id, 'mimg big'), h('div', { class: 'ssbar' }, [h('b', null, [(mon.cls === 2 ? '★ ' : '') + mon.n + ' · Nv ' + mon.lv]), h('i', { class: 'hp m' }), h('small', null, ['HP ' + fmt(mon.hp) + ' · ' + mon.race + ' · ' + mon.size + ' · ' + mon.ele + ' ' + mon.el])])]) :
         h('div', { class: 'ssfig foe' }, [h('div', { class: 'ssempty' }, ['Escolha um monstro abaixo'])])]);
     var mapRow = maps.length > 1 ? h('div', { class: 'row' }, ['Mapa: '].concat(maps.map(function (m) { return h('button', { class: 'sm' + (S.map === m ? ' on' : ''), on: { click: function () { S.map = m; refresh(true); } } }, [(Y.maps[m] || [m])[0] + ' (' + m + ')']); }))) : null;
@@ -2669,8 +2761,12 @@
   // ---------- início ----------
   function init() {
     var m = location.hash.match(/#b=([^&]+)/);
-    try { b = m && !/^[zjyx]/.test(m[1]) ? ensure(fromCode(decodeURIComponent(m[1]))) : load(); } catch (e) { b = load(); }
-    if (m && /^[zjyx]/.test(m[1])) readCode(m[1]).then(function (o) { b = ensure(o); simRes = null; syncHeader(); refresh(true); toast('Build do link carregada'); }, function () { toast('Link inválido'); });
+    try { b = m && !/^[zjyx]/.test(m[1]) ? ensure(fromCode(decodeURIComponent(m[1]))) : load(); } catch (e) { b = load(); if (m) setTimeout(function () { toast('Link inválido ou incompleto: abrindo a build salva neste navegador'); }, 300); }
+    // depois de lido, o link sai da barra de endereço: reabrir a aba não sobrescreve as alterações feitas depois
+    function dropHash() { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { } }
+    if (m && !/^[zjyx]/.test(m[1])) dropHash();
+    if (m && /^[zjyx]/.test(m[1])) readCode(m[1]).then(function (o) { b = ensure(o); simRes = null; syncHeader(); refresh(true); dropHash(); toast('Build do link carregada'); })
+      .catch(function (e) { dropHash(); toast('Link inválido (' + ((e && e.message) || 'erro') + '): abrindo a build salva neste navegador'); });
     try { var cid = localStorage.getItem(CUR), e = cid && libGet()[cid]; if (e) { curId = cid; savedSnap = JSON.stringify(ensure(e.b)); } } catch (x) { }
     initHeader(); syncHeader(); recompute(); drawStats(); drawTab(); updateState();
     // descrições dos itens do cliente (só aparecem nos detalhes do item): carregam depois da primeira tela

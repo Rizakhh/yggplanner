@@ -187,8 +187,33 @@
   }
   // item de lado único (ex.: Máscara de Oni só no Acessório Esquerdo): it.only é o slot permitido
   function itemFits(sl, it) { it = typeof it === 'object' ? it : Y.itemById[it]; return !!it && (!it.only || it.only === sl); }
-  function eqCards(sl, e) { return (e.cards || []).filter(function (cid) { return cardFits(sl, cid); }); }
-  function eqGems(sl, e) { return (e.gem || []).filter(function (cid, gi) { return cardFits(sl, cid, gi); }); }
+  // ---------- duas armas (Mercenário/Algoz e Ninja) ----------
+  // RO/rAthena: Gatuno usa AS_RIGHT/AS_LEFT (direita 50% + 10%/nv, esquerda 30% + 10%/nv; esquerda aceita adaga, espada de 1 mão ou machado de 1 mão);
+  // Ninja do YggIdle usa KO_RIGHT/KO_LEFT (direita 70% + 10%/nv, esquerda 50% + 10%/nv) e só adagas, com a esquerda liberada pela Perícia com a Mão Esquerda.
+  var DUAL = {
+    ass: { types: ['Dagger', '1hSword', '1hAxe'], R: 'AS_RIGHT', L: 'AS_LEFT', r0: 50, l0: 30, need: false },
+    asx: { types: ['Dagger', '1hSword', '1hAxe'], R: 'AS_RIGHT', L: 'AS_LEFT', r0: 50, l0: 30, need: false },
+    nin: { types: ['Dagger'], R: 'KO_RIGHT', L: 'KO_LEFT', r0: 70, l0: 50, need: true }
+  };
+  // regra de duas armas da classe (null se a classe não pode, ou se falta a perícia exigida)
+  function dualRule(b) {
+    var d = DUAL[b && b.cls]; if (!d) return null;
+    var t = (b.tree || {}), rl = t[d.R] || 0, ll = t[d.L] || 0;
+    if (d.need && !ll) return null;
+    return { types: d.types, rLv: rl, lLv: ll, rh: d.r0 + 10 * rl, lh: d.l0 + 10 * ll, rSk: d.R, lSk: d.L };
+  }
+  function isLeftWeapon(sl, it) { it = typeof it === 'object' ? it : Y.itemById[it]; return sl === 'shield' && !!it && it.c === 'w'; }
+  // a arma da mão esquerda só vale com a classe/perícia certa e com arma compatível na direita
+  function leftOk(b, it) {
+    it = typeof it === 'object' ? it : Y.itemById[it];
+    var d = dualRule(b); if (!d || !it || it.c !== 'w' || d.types.indexOf(it.w) < 0) return false;
+    var rw = b.eq.weapon && Y.itemById[b.eq.weapon.id];
+    return !!rw && d.types.indexOf(rw.w) >= 0;
+  }
+  // slot que decide as cartas: arma na mão esquerda recebe cartas de arma
+  function cardSlot(sl, e) { return sl === 'shield' && e && isLeftWeapon(sl, e.id) ? 'weapon' : sl; }
+  function eqCards(sl, e) { var cs = cardSlot(sl, e); return (e.cards || []).filter(function (cid) { return cardFits(cs, cid); }); }
+  function eqGems(sl, e) { var cs = cardSlot(sl, e); return (e.gem || []).filter(function (cid, gi) { return cardFits(cs, cid, gi); }); }
   function enchOf(it, e) { return canEnch(it) ? (e.ench || []).filter(function (cid) { return cid && Y.itemById[cid] && Y.itemById[cid].s === 'ench'; }) : []; }
   function gather(b) {
     var B = {}, notes = [], names = {}, parts = [];
@@ -196,6 +221,7 @@
     SLOTS.forEach(function (sl) {
       var e = b.eq[sl]; if (!e) return;
       var it = Y.itemById[e.id]; if (!it || !itemFits(sl, it)) return;
+      if (isLeftWeapon(sl, it) && !leftOk(b, it)) return; // arma na mão esquerda sem a regra de duas armas: não conta
       eqs.push({ sl: sl, e: e, it: it });
       names[norm(it.n)] = 1;
       eqCards(sl, e).forEach(function (cid) { names[norm(Y.itemById[cid].n)] = 1; });
@@ -210,6 +236,10 @@
         base.wAtk = it.a || 0; base.wMatk = it.ma || 0; base.wlv = it.wl || 1; base.wtype = it.w || 'Fist'; base.twoH = it.th || 0;
         var tb = Y.ra.refine['Weapon' + Math.min(5, Math.max(1, base.wlv))];
         if (tb && ref > 0) { base.refAtk = tb.bonus[ref - 1] || 0; base.refOver = tb.over[ref - 1] || 0; }
+      } else if (isLeftWeapon(o.sl, it)) {
+        // mão esquerda: arma sem DEF; o ATQ dela entra só no ataque básico (ver damage.js)
+        var tl = Y.ra.refine['Weapon' + Math.min(5, Math.max(1, it.wl || 1))];
+        base.left = { wAtk: it.a || 0, wlv: it.wl || 1, wtype: it.w, refAtk: tl && ref > 0 ? tl.bonus[ref - 1] || 0 : 0, refOver: tl && ref > 0 ? tl.over[ref - 1] || 0 : 0, n: it.n };
       } else if (o.sl !== 'ammo') {
         base.def += (it.d || 0);
         var ta = Y.ra.refine.Armor1;
@@ -322,7 +352,10 @@
     var job = Y.ra.jobs[rj] || Y.ra.jobs.Novice, asp = job.aspd || {};
     var key = wtype === 'Fist' || !wtype ? 'Fist' : wtype;
     var aBase = asp[key] != null ? asp[key] : (asp.Fist || 50);
-    if (b.eq.shield) aBase += (asp.Shield || 0);
+    // duas armas (rAthena renewal): soma 1/4 da base da arma esquerda; escudo soma a penalidade de escudo
+    var dr = base.left ? dualRule(b) : null;
+    if (dr) { R.dual = { rh: dr.rh, lh: dr.lh, rLv: dr.rLv, lLv: dr.lLv, left: base.left }; aBase += Math.floor((asp[base.left.wtype] != null ? asp[base.left.wtype] : (asp.Fist || 50)) / 4); }
+    else if (b.eq.shield && !isLeftWeapon('shield', b.eq.shield.id)) aBase += (asp.Shield || 0);
     var temp = R.ranged ? R.dex * R.dex / 7 : R.dex * R.dex / 5;
     temp = Math.sqrt(temp + R.agi * R.agi * 0.5) * 0.25 + 196;
     var a = Math.floor(temp + (0) * R.agi / 200) - Math.min(aBase, 200);
@@ -362,6 +395,7 @@
     ST: ST, TR: TR, SLOTS: SLOTS, SLOT_NAMES: SLOT_NAMES, SLOT_TYPE: SLOT_TYPE, CARD_TYPE: CARD_TYPE, GEM_SLOTS: GEM_SLOTS, SIZEFIX: SIZEFIX, RANGED: RANGED,
     newBuild: newBuild, newEq: newEq, compute: compute, gather: gather, statPointsTotal: statPointsTotal, isHigh: isHigh, EXPANDED: EXPANDED, statCost: statCost, statSpent: statSpent,
     SHADOW: SHADOW, VISUAL: VISUAL, EXTRA_SLOT: EXTRA_SLOT, jlRarity: jlRarity,
-    lineRange: lineRange, resolveKey: resolveKey, BT: BT, norm: norm, hooks: HOOKS, condMult: condMult, canEnch: canEnch, cardFits: cardFits, itemFits: itemFits
+    lineRange: lineRange, resolveKey: resolveKey, BT: BT, norm: norm, hooks: HOOKS, condMult: condMult, canEnch: canEnch, cardFits: cardFits, itemFits: itemFits,
+    dualRule: dualRule, leftOk: leftOk, isLeftWeapon: isLeftWeapon, cardSlot: cardSlot
   };
 })();

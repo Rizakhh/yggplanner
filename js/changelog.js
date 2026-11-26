@@ -4,6 +4,22 @@
 window.YGG = window.YGG || {};
 YGG.changelog = [
   {
+    v: '0.2.13', d: '2026-11-26', t: 'Link curto e seguro, duas armas e shurikens de uma mão',
+    g: [
+      ['Link da build', [
+        'O botão Link agora encurta o link automaticamente (da.gd, com spoo.me de reserva) e mostra numa janela com botão Copiar. Se o encurtador estiver fora do ar, fica o link longo.',
+        'Corrigido: em alguns navegadores (Safari antigo, navegadores dentro de apps) ou com link cortado ao copiar, a página abria em branco/vazia. Agora o link é lido mesmo nesses navegadores e, se estiver incompleto, aparece um aviso e abre a build salva.',
+        'Depois de carregar a build do link, o link sai da barra de endereço: recarregar a página não apaga mais as alterações feitas depois.'
+      ]],
+      ['Equipamentos', [
+        'Shuriken Explosiva e Shuriken do Caçador de Casadas agora são armas de uma mão e permitem escudo.',
+        'Duas armas: Ninja (com Perícia com a Mão Esquerda) usa uma adaga em cada mão; Algoz usa adaga, espada ou machado de uma mão na mão esquerda. A arma vai no slot do escudo, que passa a se chamar Mão esquerda e aceita cartas de arma.',
+        'O ataque básico acerta com as duas mãos: Ninja direita 80–120% e esquerda 60–100%; Algoz direita 50% + 10%/nível e esquerda 30% + 10%/nível das perícias. As habilidades usam só a mão direita.',
+        'Arma da mão esquerda sem a perícia ou com arma incompatível na direita fica marcada como inativa e não entra no cálculo.'
+      ]]
+    ]
+  },
+  {
     v: '0.2.12', d: '2026-11-26', t: 'Visual no avatar, rotação por nível e gemas de chefe',
     g: [
       ['Equipamentos', [

@@ -39,7 +39,10 @@ window.YGG = window.YGG || {};
     1280217: { fx: [{ c: { proc: 'Ao usar Kaupe' }, t: '10% de chance de dano mágico +20% por 5 segundos.' }] },
     // Carta Ascensão de LHZ: RES, MRES e Talentos só no Inferno
     1280202: { fx: [{ c: null, s: { hpPct: 10 } }, { c: null, s: { spPct: 10 } }, { c: null, s: { dmgBoth: 5 } },
-      { c: { zone2: 'inferno', zone: 'Só no Inferno' }, s: { res: 10 } }, { c: { zone2: 'inferno', zone: 'Só no Inferno' }, s: { mres: 10 } }, { c: { zone2: 'inferno', zone: 'Só no Inferno' }, s: { allTraits: 10 } }] }
+      { c: { zone2: 'inferno', zone: 'Só no Inferno' }, s: { res: 10 } }, { c: { zone2: 'inferno', zone: 'Só no Inferno' }, s: { mres: 10 } }, { c: { zone2: 'inferno', zone: 'Só no Inferno' }, s: { allTraits: 10 } }] },
+    // Shuriken Explosiva e Shuriken do Caçador de Casadas: agora de uma mão (permitem escudo)
+    1280737: { th: null },
+    650056: { th: null }
   };
   (Y.items || []).forEach(function (it) {
     var p = P[it.id]; if (!p) return;

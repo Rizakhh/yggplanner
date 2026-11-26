@@ -132,6 +132,26 @@
       }
       res.min = calc(P.wmin, false); res.max = calc(P.wmax, false); res.avg = calc((P.wmin + P.wmax) / 2, false);
       res.critAvg = calc(P.wmax, true);
+      // duas armas: o ataque básico acerta com as duas mãos (direita × % da direita + esquerda × % da esquerda)
+      if (R.dual && s && s.id === 'basic') {
+        var Lw = R.dual.left, sizeI = { 'Pequeno': 0, 'Médio': 1, 'Grande': 2 }[mon.size]; if (sizeI == null) sizeI = 1;
+        var lfix = (E.SIZEFIX[Lw.wtype] || [100, 100, 100])[sizeI] / 100, lvar = Lw.wAtk * 0.05 * Lw.wlv;
+        var calcL = function (wpn, crit) {
+          var base = stAtk + wpn * lfix + (wpn > 0 ? Lw.refAtk * lfix : 0) + R.equipAtk + (Lw.refOver ? Lw.refOver / 2 * lfix : 0);
+          base *= (1 + R.atkPct / 100);
+          var d = base * perHitRatio / 100 * eleMult * cf2;
+          d = d * (4000 + def) / (4000 + def * 10) - (o.softDef || 0);
+          d *= (1 + R.patk / 100);
+          if (crit) d *= D.critMult(R, b, o, s);
+          return Math.max(1, Math.floor(d));
+        };
+        var rh = R.dual.rh / 100, lh = R.dual.lh / 100, lmin = Math.max(0, Lw.wAtk - lvar), lmax = Lw.wAtk + lvar;
+        res.right = { min: Math.max(1, Math.floor(res.min * rh)), max: Math.max(1, Math.floor(res.max * rh)), avg: Math.max(1, Math.floor(res.avg * rh)), pct: R.dual.rh };
+        res.left = { min: Math.max(1, Math.floor(calcL(lmin, false) * lh)), max: Math.max(1, Math.floor(calcL(lmax, false) * lh)), avg: Math.max(1, Math.floor(calcL((lmin + lmax) / 2, false) * lh)), pct: R.dual.lh };
+        res.critAvg = Math.max(1, Math.floor(res.critAvg * rh)) + Math.max(1, Math.floor(calcL(lmax, true) * lh));
+        res.min = res.right.min + res.left.min; res.max = res.right.max + res.left.max; res.avg = res.right.avg + res.left.avg;
+        res.dual = true;
+      }
       var mobFlee = mon.lv + mon.agi + 100;
       var hitRate = Math.min(100, Math.max(5, 80 + R.hit - mobFlee)) / 100;
       var perf = (B.perfHit || 0) / 100;
@@ -147,6 +167,7 @@
     var zm = D.zoneMult(R, b, o, isMagic);
     res.zone = zm;
     ['min', 'max', 'avg', 'critAvg'].forEach(function (k) { if (res[k] != null) res[k] = Math.max(1, Math.floor(res[k] * zm.mult)); });
+    if (res.dual) [res.right, res.left].forEach(function (x) { ['min', 'max', 'avg'].forEach(function (k) { x[k] = Math.max(1, Math.floor(x[k] * zm.mult)); }); });
     var perHitAvg = isMagic ? res.avg : (res.critCh * res.critAvg + (1 - res.critCh) * res.avg);
     res.perHitAvg = perHitAvg;
     res.perCast = perHitAvg * hits * res.hitCh;
