@@ -1348,7 +1348,7 @@
     var ico = h('span', { class: 'eqi' }, [it ? itemIcon(it.id) : h('span', { class: 'eqph eq-' + sl })]);
     var cards = e && (e.cards || []).filter(Boolean).length;
     var txt = h('span', { class: 'eqt' }, [h('small', null, [slotName(sl)]),
-      h('b', { style: rar ? 'color:' + rar.color : '' }, [it ? (e.ref ? '+' + e.ref + ' ' : '') + it.n : ok ? '—' : 'bloqueado (2 mãos)']),
+      h('b', { style: rar ? 'color:' + rar.color : '' }, it ? [h('span', { class: 'nm' }, [(e.ref ? '+' + e.ref + ' ' : '') + it.n]), idTag(it)] : [ok ? '—' : 'bloqueado (2 mãos)']),
       it ? h('em', null, [E.EXTRA_SLOT[sl] ? (it.jl ? jlRarName(it, e.ref || 0) : E.EXTRA_SLOT[sl] === 'shadow' ? 'Sombrio' : 'Visual') : rar.n + ' · T' + e.tier + (cards ? ' · ' + cards + ' carta(s)' : '') + ((e.gem || []).filter(Boolean).length ? ' · gema' : '') + (E.canEnch(it) && (e.ench || [])[0] && Y.itemById[e.ench[0]] ? ' · ' + Y.itemById[e.ench[0]].n : '')]) : null]);
     var warn = sl === 'weapon' && it && it.w && Y.classById[b.cls].wp.indexOf(it.w) < 0 || sl === 'shield' && leftBad();
     var bt = h('button', { class: 'eqs ' + side + (sl === selSlot ? ' sel' : '') + (it ? ' has' : '') + (ok ? '' : ' off') + (warn ? ' warnb' : ''),
@@ -1412,9 +1412,10 @@
   function cardsFor(sl, gem, gslot) {
     return Y.items.filter(function (it) { return E.cardFits(sl, it, gem ? gslot : undefined); });
   }
+  function idTag(it) { return h('span', { class: 'iid', title: 'ID do item' }, ['#' + it.id]); }
   function pickerModal(list, title, onPick, opts) {
     opts = opts || {};
-    var q = h('input', { placeholder: 'Buscar por nome…', style: 'width:100%' });
+    var q = h('input', { placeholder: opts.mon ? 'Buscar por nome…' : 'Buscar por nome ou ID…', style: 'width:100%' });
     var chk = h('input', { type: 'checkbox', checked: true });
     var hasCli = list.some(function (it) { return it.cl && !it.cf; });
     var cli = h('input', { type: 'checkbox', checked: opts.cli != null ? opts.cli : pickFilter.cli, on: { change: function () { if (opts.cli == null) pickFilter.cli = cli.checked; } } });
@@ -1424,14 +1425,14 @@
       var s = q.value.trim().toLowerCase(), n = 0;
       list.forEach(function (it) {
         if (n >= 80) return;
-        if (s && it.n.toLowerCase().indexOf(s) < 0) return;
+        if (s && it.n.toLowerCase().indexOf(s) < 0 && String(it.id) !== s) return;
         if (chk.checked && opts.usable !== false && !usable(it)) return;
         if (it.cl && !it.cf && !cli.checked) return;
         n++;
         var d = [];
         if (it.a) d.push('ATQ ' + it.a); if (it.ma) d.push('ATQM ' + it.ma); if (it.d) d.push('DEF ' + it.d); if (it.md) d.push('MDEF ' + it.md); if (it.sl && !hasSlTxt(it)) d.push('[' + it.sl + ']'); if (it.lv) d.push('Nv ' + it.lv);
         if (it.w) d.push(Y.weaponNames[it.w] || it.w);
-        var row = h('div', { class: 'it', on: { click: function () { onPick(it); closeModal(); } } }, [h('span', { class: 'mcell' }, [opts.mon ? h('span', { class: 'mbox' }, [mobImg(it.id)]) : h('span', { class: 'eqi sm' }, [itemIcon(it.id)]), h('span', null, [it.n]), cliTag(it)]), h('span', { class: 'mut' }, [d.join(' · ')])]);
+        var row = h('div', { class: 'it', on: { click: function () { onPick(it); closeModal(); } } }, [h('span', { class: 'mcell' }, [opts.mon ? h('span', { class: 'mbox' }, [mobImg(it.id)]) : h('span', { class: 'eqi sm' }, [itemIcon(it.id)]), h('span', null, [it.n]), opts.mon ? null : idTag(it), cliTag(it)]), h('span', { class: 'mut' }, [d.join(' · ')])]);
         if (!opts.mon) tipOn(row, function () { return itemTip(it); });
         box.appendChild(row);
       });
@@ -1504,7 +1505,7 @@
     c.appendChild(h('div', { class: 'row' }, [
       h('button', { class: 'pri', on: { click: function () { pickerModal(itemsFor(sl), 'Escolher ' + slotName(sl), function (x) { if (!x) return; b.eq[sl] = E.newEq(x.id); if (sl === 'weapon' && x.th) delete b.eq.shield; refresh(true); }, { icon: true, cli: E.EXTRA_SLOT[sl] ? true : undefined }); } } }, [it ? 'Trocar item' : 'Escolher item']),
       it ? h('button', { on: { click: function () { delete b.eq[sl]; refresh(true); } } }, ['Remover']) : null,
-      it ? h('span', { class: 'eqi lg' }, [itemIcon(it.id)]) : null, it ? h('b', null, [it.n]) : null, it ? cliTag(it) : null]));
+      it ? h('span', { class: 'eqi lg' }, [itemIcon(it.id)]) : null, it ? h('b', null, [it.n]) : null, it ? idTag(it) : null, it ? cliTag(it) : null]));
     if (!it) return c;
     // descrição
     var info = [];

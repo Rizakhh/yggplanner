@@ -4,6 +4,15 @@
 window.YGG = window.YGG || {};
 YGG.changelog = [
   {
+    v: '0.2.13-hf1', d: '2026-11-26', t: 'ID do item visível',
+    g: [
+      ['Equipamentos', [
+        'O ID do item aparece ao lado do nome na pesquisa de itens e cartas, nos slots da aba Equipamentos e no editor do slot.',
+        'A pesquisa de itens também aceita o ID (ex.: digite 2107).'
+      ]]
+    ]
+  },
+  {
     v: '0.2.13', d: '2026-11-26', t: 'Link curto e seguro, duas armas e shurikens de uma mão',
     g: [
       ['Link da build', [
