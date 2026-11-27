@@ -4,6 +4,17 @@
 window.YGG = window.YGG || {};
 YGG.changelog = [
   {
+    v: '0.2.14', d: '2026-11-27', t: 'Comandos do jogo (@itemopcao)',
+    g: [
+      ['Equipamentos', [
+        'Novo botão Comandos do jogo, abaixo da janela de equipamentos: gera um comando @itemopcao por item equipado, com a raridade e os bônus aleatórios do planner, para criar os itens no servidor de testes do Evento de Tutores.',
+        'Como o chat aceita um comando por mensagem, o botão Copiar próximo copia um de cada vez e marca o que já foi copiado. Cada comando também tem o próprio botão Copiar.',
+        'O editor de cada slot ganhou o botão Copiar comando, só para aquele item.',
+        'Avisos na lista: Lendário e Mítico saem como Épico (teto do evento); Épico aceita até 3 linhas; linha repetida ou que não existe no comando fica de fora; refino, cartas, gemas e encantamentos não vêm pelo comando.'
+      ]]
+    ]
+  },
+  {
     v: '0.2.13-hf1', d: '2026-11-26', t: 'ID do item visível',
     g: [
       ['Equipamentos', [

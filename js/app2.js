@@ -1370,6 +1370,87 @@
     });
     return h('span', { class: 'wornl', 'aria-hidden': 'true' }, out);
   }
+  // ---------- comando do jogo: @itemopcao <item> <raridade 1-4> <linha>:<valor> ... ----------
+  // Nomes curtos das linhas: PDF "Criar item com as linhas que você escolher" (Evento de Tutores, nov/2026).
+  // O comando cria um item novo (sem refino, cartas ou encantamentos), só no servidor de testes; o chat aceita um comando por mensagem.
+  var OPT_FIX = { atk: 'atq', matk: 'atqm', hit: 'precisao', def: 'def', mdef: 'defm', hp: 'hp', aspd: 'aspdfixa', aspdPct: 'aspd', critPct: 'critico', critDmg: 'danocrit',
+    castVar: 'conjuracao', afterCast: 'posconj', dmgMelee: 'perto', dmgRanged: 'distancia', dmgMagic: 'magico', ignDefAll: 'ignoradef', ignMdefAll: 'ignoramdef' };
+  var OPT_ATTR = { str: 'for', agi: 'agi', vit: 'vit', int: 'int', dex: 'des', luk: 'sor' };
+  var OPT_NB = { pNB: 'classe-', mNB: 'classem-', ignDefNB: 'ignoradef-', ignMdefNB: 'ignoramdef-' };
+  var OPT_PRE = { pRace: 'raca-', mRace: 'racam-', pEle: 'ele-', mEle: 'elem-', resEle: 'resist-' };
+  // mesma ordem de Y.bonus.races / Y.bonus.eles (o comando chama Maldito de "mortovivo")
+  var OPT_RACE = ['amorfo', 'mortovivo', 'bruto', 'planta', 'inseto', 'peixe', 'demonio', 'humanoide', 'anjo', 'dragao'];
+  var OPT_ELE = ['neutro', 'agua', 'terra', 'fogo', 'vento', 'veneno', 'sagrado', 'sombrio', 'fantasma', 'mortovivo'];
+  function optId(L) {
+    if (OPT_FIX[L.t]) return OPT_FIX[L.t];
+    if (L.t === 'attr') return OPT_ATTR[L.p || 'str'];
+    if (OPT_NB[L.t]) return OPT_NB[L.t] + (L.p === 'Chefe' ? 'chefe' : 'normal');
+    if (OPT_PRE[L.t]) {
+      var race = /Race$/.test(L.t), x = race ? OPT_RACE[Y.bonus.races.indexOf(L.p)] : OPT_ELE[Y.bonus.eles.indexOf(L.p)];
+      return x ? OPT_PRE[L.t] + x : '';
+    }
+    return '';
+  }
+  var CMD_SLOTS = ['weapon', 'shield', 'headT', 'headM', 'headB', 'body', 'cloak', 'shoes', 'accL', 'accR'];
+  // {cmd, warn[]} do item no slot (null se o slot não tem item ou não aceita o comando)
+  function gameCmd(sl) {
+    var e = b.eq[sl], it = e && Y.itemById[e.id];
+    if (!it || CMD_SLOTS.indexOf(sl) < 0 || !slotAllowed(sl)) return null;
+    var rar = e.rar || 0, warn = [], parts = [], seen = {};
+    (e.lines || []).slice(0, Y.bonus.rarities[rar].max).forEach(function (L) {
+      if (!L || !L.t || !L.v) return;
+      var t = E.BT[L.t], id = optId(L), nm = t ? t.n.replace(/ %$/, '') + (L.p ? ' (' + (STN[L.p] || L.p) + ')' : '') : L.t;
+      if (!id) { warn.push(nm + ': não existe no comando, fica de fora'); return; }
+      if (seen[id]) { warn.push(nm + ': linha repetida, o comando aceita uma vez por item (fica de fora)'); return; }
+      seen[id] = 1;
+      if (L.d) warn.push(nm + ': linha dimensional sai como linha comum');
+      parts.push(id + ':' + L.v);
+    });
+    // o evento vai até Épico: 5 ou 6 viram Épico, e Épico tem no máximo 3 linhas
+    var cr = Math.min(rar + 1, 4);
+    if (rar > 3) warn.push(Y.bonus.rarities[rar].n + ' sai como Épico (teto do evento)');
+    if (parts.length > 3) warn.push('Épico aceita 3 linhas: o comando recusa com ' + parts.length + '. Tire ' + (parts.length - 3) + ' linha(s) no planner.');
+    if (e.tier > 4) warn.push('valores de tier acima do T4 podem passar da faixa do comando');
+    if (it.cl && !it.cf) warn.push('item só encontrado no cliente do jogo, pode não existir no servidor');
+    var extra = [];
+    if (e.ref) extra.push('refino +' + e.ref);
+    if ((e.cards || []).some(Boolean) || (e.gem || []).some(Boolean)) extra.push('cartas/gemas');
+    if (E.canEnch(it) && (e.ench || []).some(Boolean)) extra.push('encantamentos');
+    if (extra.length) warn.push('não vem pelo comando: ' + extra.join(', '));
+    return { sl: sl, it: it, cmd: ['@itemopcao', it.id, cr].concat(parts).join(' '), warn: warn };
+  }
+  function copyPlain(t, ok) {
+    function fb() { var ta = h('textarea', { style: 'position:fixed;left:-9999px' }); ta.value = t; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); ok && ok(); } catch (x) { toast('Não foi possível copiar'); } ta.remove(); }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(function () { ok && ok(); }, fb); else fb();
+  }
+  function openGameCmds() {
+    var list = CMD_SLOTS.map(gameCmd).filter(Boolean), pos = 0, rows = [];
+    var c = h('div', null, [h('h3', null, ['Comandos do jogo']),
+      h('div', { class: 'tip' }, ['Cada comando cria um item novo (só no servidor de testes do evento) com a raridade e os bônus aleatórios do planner, até Épico. O chat aceita um comando por mensagem: use Copiar próximo, cole no jogo, envie e volte para o próximo. Para conferir as faixas no jogo: @linhas <ID do item>.'])]);
+    if (!list.length) { c.appendChild(h('div', { class: 'mut' }, ['Nenhum equipamento comum equipado.'])); c.appendChild(h('div', { class: 'row' }, [h('button', { on: { click: closeModal } }, ['Fechar'])])); openModal(c); return; }
+    var nx = h('button', { class: 'pri' });
+    function mark(i) { rows[i].classList.add('done'); }
+    function label() { nx.textContent = pos < list.length ? 'Copiar próximo (' + (pos + 1) + '/' + list.length + ')' : 'Todos copiados · recomeçar'; }
+    nx.addEventListener('click', function () {
+      if (pos >= list.length) { pos = 0; rows.forEach(function (r) { r.classList.remove('done', 'cur'); }); label(); return; }
+      var i = pos; copyPlain(list[i].cmd, function () { toast('Copiado ' + (i + 1) + '/' + list.length + ': ' + list[i].it.n); });
+      rows.forEach(function (r) { r.classList.remove('cur'); }); mark(i); pos++; if (rows[pos]) rows[pos].classList.add('cur'); label();
+    });
+    var box = h('div', { class: 'gcmds' });
+    list.forEach(function (o, i) {
+      var cp = h('button', { title: 'Copiar este comando' }, ['Copiar']);
+      cp.addEventListener('click', function () { copyPlain(o.cmd, function () { toast('Copiado: ' + o.it.n); }); mark(i); });
+      var r = h('div', { class: 'gcmd' + (i === 0 ? ' cur' : '') }, [
+        h('div', { class: 'gch' }, [h('small', null, [slotName(o.sl)]), h('b', null, [o.it.n]), idTag(o.it)]),
+        h('div', { class: 'gcl' }, [h('code', null, [o.cmd]), cp]),
+        o.warn.length ? h('div', { class: 'gcw' }, o.warn.map(function (w) { return h('div', null, ['⚠ ' + w]); })) : null]);
+      rows.push(r); box.appendChild(r);
+    });
+    label();
+    c.appendChild(box);
+    c.appendChild(h('div', { class: 'row' }, [nx, h('button', { on: { click: closeModal } }, ['Fechar'])]));
+    openModal(c, 'wide');
+  }
   function tabEquip(t) {
     t.appendChild(stageBar());
     var cl = Y.classById[b.cls];
@@ -1397,6 +1478,11 @@
       h('span', null, [h('small', null, ['ASPD']), h('b', null, [fmt(R.aspdEff)])]),
       h('span', null, [h('small', null, ['Peso']), h('b', { class: R.weight > R.maxWeight ? 'bad' : '' }, [fmt(R.weight) + ' / ' + fmt(R.maxWeight)])])]));
     t.appendChild(win);
+    if (eqMode === 'base') {
+      var gb = h('button', { title: 'Gera um comando @itemopcao por equipamento para criar os itens no jogo' }, ['Comandos do jogo']);
+      gb.addEventListener('click', openGameCmds);
+      t.appendChild(h('div', { class: 'row gcbar' }, [gb, h('small', { class: 'mut' }, ['Cria os itens no jogo com @itemopcao (raridade e bônus aleatórios).'])]));
+    }
     var ed = slotEditor(selSlot); ed.id = 'slotEd'; t.appendChild(ed);
     t.appendChild(extraEditor());
   }
@@ -1505,6 +1591,7 @@
     c.appendChild(h('div', { class: 'row' }, [
       h('button', { class: 'pri', on: { click: function () { pickerModal(itemsFor(sl), 'Escolher ' + slotName(sl), function (x) { if (!x) return; b.eq[sl] = E.newEq(x.id); if (sl === 'weapon' && x.th) delete b.eq.shield; refresh(true); }, { icon: true, cli: E.EXTRA_SLOT[sl] ? true : undefined }); } } }, [it ? 'Trocar item' : 'Escolher item']),
       it ? h('button', { on: { click: function () { delete b.eq[sl]; refresh(true); } } }, ['Remover']) : null,
+      it && CMD_SLOTS.indexOf(sl) >= 0 ? h('button', { title: 'Copia o comando @itemopcao deste item', on: { click: function () { var o = gameCmd(sl); if (o) copyPlain(o.cmd, function () { toast('Copiado: ' + o.cmd + (o.warn.length ? ' · ' + o.warn.join('; ') : '')); }); } } }, ['Copiar comando']) : null,
       it ? h('span', { class: 'eqi lg' }, [itemIcon(it.id)]) : null, it ? h('b', null, [it.n]) : null, it ? idTag(it) : null, it ? cliTag(it) : null]));
     if (!it) return c;
     // descrição
