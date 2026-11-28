@@ -2043,7 +2043,7 @@
     // execução
     var c3 = h('div', { class: 'card' }, [h('h3', null, ['Resultado'])]);
     var run = h('button', { class: 'pri', disabled: !mon, on: { click: function () { runSim(c3); } } }, ['Simular']);
-    c3.appendChild(h('div', { class: 'row' }, [run, h('label', { class: 'inl' }, ['Repetições (Monte Carlo) ', h('input', { class: 'num', type: 'number', value: S.runs, on: { change: function (e) { S.runs = Math.max(1, Math.min(1000, +e.target.value || 100)); save(); } } })])]));
+    c3.appendChild(h('div', { class: 'row' }, [run, h('label', { class: 'inl' }, ['Repetições ', h('input', { class: 'num', type: 'number', value: S.runs, on: { change: function (e) { S.runs = Math.max(1, Math.min(1000, +e.target.value || 100)); save(); } } })])]));
     var cmpB = h('button', { disabled: !mon, title: 'Roda a mesma simulação (alvo, cenário e rotação) com cada etapa preenchida', on: { click: function () { simCompare(c3); } } }, ['Comparar etapas']);
     c3.firstChild.nextSibling.appendChild(cmpB);
     t.appendChild(c3);
@@ -2291,7 +2291,7 @@
     if (dd.rg) ficha.push(['Alcance', cleanUnit(dd.rg)]);
     if (ss && ss.k !== 'b') {
       var lvS = Math.min(ss.max, L);
-      ficha.push(['Fórmula (Nv ' + lvS + ')', fmt(D.ratioFull(R, ss, lvS)) + '% do ' + (ss.k === 'm' ? 'ATQM' : 'ATQ') + ' · ' + D.hitsOf(ss, lvS, R) + ' golpe(s)' + (ss.e ? ' · ' + ss.e : '') + (ss.a > 1 ? ' · área' : '')]);
+      ficha.push(['Fórmula (Nv ' + lvS + ')', fmt(D.ratioFull(R, ss, lvS)) + '% do ' + (ss.k === 'm' ? 'ATQM' : 'ATQ') + (ss.ph || ss.hl ? ' por golpe × ' + D.hitsOf(ss, lvS, R) + ' golpe(s)' : ' · ' + D.hitsOf(ss, lvS, R) + ' golpe(s)') + (ss.e ? ' · ' + ss.e : '') + (ss.a > 1 ? ' · área' : '')]);
       if (R) { var tm = D.timing(R, ss, lvS); ficha.push(['Tempo de uso', fmt(tm.cast, 2) + ' s conj. · ciclo ' + fmt(tm.cycle, 2) + ' s' + (tm.cd ? ' · recarga ' + fmt(tm.cd, 1) + ' s' : '')]); }
     }
     if (ficha.length) kids.push(h('div', { class: 'tfic' }, ficha.map(function (f) { return h('span', null, [h('small', null, [f[0]]), h('b', null, [f[1]])]); })));
@@ -2724,6 +2724,94 @@
         h('ul', { class: 'bul' }, f[2].map(function (x) { return h('li', null, [x]); })), f[3] ? h('div', { class: 'fval' }, [f[3]()]) : null]));
     });
     t.appendChild(grid);
+    t.appendChild(skFormCard());
+  }
+
+  // ----- card de fórmulas das habilidades (aba Fórmulas) -----
+  var skfF = { q: '', cls: '', k: '' }, skfIdx = null;
+  var HLT = { lv: 'Nv golpes', lv2: 'Nv + 2 golpes', bowl: '3 golpes com espada de duas mãos, 2 com as outras armas', size: '1, 2 ou 3 golpes conforme o tamanho do alvo (P/M/G)',
+    wblade: '⌊Nv / 2⌋ + 1 golpes', dagger2: '2 golpes com adaga, 1 com as outras armas', pwave: 'Nv + 2 ondas (o dobro com Livro ou Cajado)', wball: '1 / 1 / 9 / 9 / 25 golpes',
+    half: '⌈Nv / 2⌉ golpes', lv4: '4 golpes', meteor: '⌈Nv / 2⌉ + 2 meteoros', blitz: '2 golpes' };
+  var ATN = { str: 'FOR', agi: 'AGI', vit: 'VIT', int: 'INT', dex: 'DES', luk: 'SOR' };
+  function pctN(x) { return fmt(x, 2) + '%'; }
+  function skFormula(ss) {
+    var m = ss.m || [0, 0], f = !m[1] ? pctN(m[0]) : !m[0] ? pctN(m[1]) + ' × Nv' : pctN(m[0]) + ' + ' + pctN(m[1]) + ' × Nv';
+    if (ss.si) f += ' + ' + fmt(ss.si, 2) + ' × INT';
+    if (ss.strl) f += ' + FOR × Nv';
+    if (ss.m[1] && (ss.si || ss.strl || ss.sf || ss.bl)) f = '(' + f + ')';
+    if (ss.sf) f += ' × (1 + ' + Object.keys(ss.sf).map(function (k) { return fmt(ss.sf[k] * 100, 2) + '% × ' + (ATN[k] || k); }).join(' + ') + ')';
+    if (ss.bl) f += ' × nível de base / 100';
+    var lines = [(ss.k === 'm' ? 'Dano mágico: ' : 'Dano físico: ') + f + ' do ' + (ss.k === 'm' ? 'ATQM' : 'ATQ')];
+    if (ss.sp2) lines.push('Dano dobrado com lança.');
+    var hx = ss.hl && HLT[ss.hl] ? HLT[ss.hl] : (ss.h || 1) + ' golpe' + ((ss.h || 1) > 1 ? 's' : '');
+    lines.push('Golpes: ' + hx + ((ss.ph || ss.hl) ? ' — o % vale para cada golpe' : (ss.h || 1) > 1 ? ' — o % é dividido entre os golpes' : ''));
+    var ex = []; if (ss.e) ex.push('Elemento: ' + ss.e); if (ss.a > 1) ex.push('Área'); if (ss.max) ex.push('Nível máximo ' + ss.max);
+    if (ex.length) lines.push(ex.join(' · '));
+    return lines;
+  }
+  function skfBuild() {
+    if (skfIdx) return skfIdx;
+    var map = {}, list = [];
+    (Y.classes || []).forEach(function (c) {
+      (Y.trees[c.id] || []).forEach(function (tb) {
+        tb.sk.forEach(function (s) {
+          var o = map[s[0]];
+          if (!o) { o = map[s[0]] = { ae: s[0], max: s[1], cls: [], n: skLabel(s[0]) }; list.push(o); }
+          if (o.cls.indexOf(c.id) < 0) o.cls.push(c.id);
+        });
+      });
+    });
+    list.forEach(function (o) {
+      var d = (Y.sk2 && Y.sk2[o.ae]) || {}, sid = AKS[o.ae], ss = sid && Y.skills[sid];
+      o.ss = ss && ss.k !== 'b' ? ss : null;
+      o.kind = o.ss ? (o.ss.k === 'm' ? 'm' : 'f') : 'o';
+      o.key = [o.n, d.en || '', o.ae].join(' ').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    });
+    list.sort(function (a, c) { return a.n.localeCompare(c.n, 'pt-BR'); });
+    return (skfIdx = list);
+  }
+  function skFormCard() {
+    var list = skfBuild();
+    var box = h('div', { class: 'skfl' }), cnt = h('small', { class: 'skfc' });
+    var q = h('input', { type: 'search', class: 'skfq', placeholder: 'Buscar habilidade (português, inglês ou código)…', value: skfF.q, on: { input: function () { skfF.q = q.value; draw(); } } });
+    var sc = h('select', { on: { change: function () { skfF.cls = sc.value; draw(); } } }, [h('option', { value: '' }, ['Todas as classes']), h('option', { value: 'cur' }, ['Minha classe (' + ((Y.classById[b.cls] || {}).n || b.cls) + ')'])]
+      .concat((Y.classes || []).filter(function (c) { return (Y.trees[c.id] || []).length; }).map(function (c) { return h('option', { value: c.id }, [c.n]); })));
+    sc.value = skfF.cls;
+    var sk = h('select', { on: { change: function () { skfF.k = sk.value; draw(); } } }, [h('option', { value: '' }, ['Todos os tipos']), h('option', { value: 'd' }, ['Só de dano']),
+      h('option', { value: 'f' }, ['Dano físico']), h('option', { value: 'm' }, ['Dano mágico']), h('option', { value: 'o' }, ['Suporte e outras'])]);
+    sk.value = skfF.k;
+    function draw() {
+      var qq = skfF.q.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim(), ci = skfF.cls === 'cur' ? b.cls : skfF.cls;
+      var res = list.filter(function (o) {
+        if (ci && o.cls.indexOf(ci) < 0) return false;
+        if (skfF.k === 'd' ? o.kind === 'o' : skfF.k && o.kind !== skfF.k) return false;
+        return !qq || qq.split(/\s+/).every(function (w) { return o.key.indexOf(w) >= 0; });
+      });
+      var LIM = 60; box.innerHTML = '';
+      cnt.textContent = res.length + ' habilidade' + (res.length === 1 ? '' : 's') + (res.length > LIM ? ' · mostrando ' + LIM + ', refine a busca' : '');
+      res.slice(0, LIM).forEach(function (o) {
+        var cl = o.cls.map(function (c) { return (Y.classById[c] || {}).n || c; });
+        var sum = h('summary', null, [skillIcon(o.ae), h('span', { class: 'skfn' }, [h('b', null, [o.n]), h('small', null, [cl.slice(0, 3).join(', ') + (cl.length > 3 ? ' +' + (cl.length - 3) : '')])]),
+          h('span', { class: 'skfk k' + o.kind }, [o.kind === 'm' ? 'Mágico' : o.kind === 'f' ? 'Físico' : 'Outra'])]);
+        var body = h('div', { class: 'skfb' });
+        var det = h('details', { class: 'skfi' }, [sum, body]);
+        if (o.ss) {
+          var L = o.ss.max, val = R ? fmt(D.ratioFull(R, o.ss, L)) + '% × ' + D.hitsOf(o.ss, L, R) + ' golpe(s) no Nv ' + L + ' com a sua build' : null;
+          body.appendChild(h('ul', { class: 'bul' }, skFormula(o.ss).map(function (x) { return h('li', null, [x]); })));
+          if (val) body.appendChild(h('div', { class: 'fval' }, [val]));
+        }
+        det.addEventListener('toggle', function () {
+          if (!det.open || det._f) return; det._f = 1;
+          body.appendChild(skTipFull(o.ae, o.max, o.max));
+        });
+        box.appendChild(det);
+      });
+      if (!res.length) box.appendChild(h('div', { class: 'tip' }, ['Nenhuma habilidade encontrada.']));
+    }
+    draw();
+    return h('div', { class: 'card skfcard' }, [h('div', { class: 'ch' }, [h('h3', null, ['Fórmulas das habilidades'])]),
+      h('div', { class: 'tip' }, ['Todas as habilidades das árvores do jogo. As de dano mostram a fórmula usada pelo planner e o valor com a sua build; abra uma habilidade para ver a descrição do YggIdle e a tabela por nível.']),
+      h('div', { class: 'skfbar' }, [q, sc, sk]), cnt, box]);
   }
 
   // ---------- aba Tutores (builds recomendadas, curadoria em data/destaques.js) ----------

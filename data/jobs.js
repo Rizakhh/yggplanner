@@ -163,6 +163,61 @@ window.YGG = window.YGG || {};
   P('rushstrike', 'Rush Strike', 5, lin(0, 12250), { ae: 'MT_RUSH_STRIKE', h: 7, a: 9, bl: 1, w: ['2hAxe'], sp: [60, 0], d: 1, cd: 1 });
   P('triplelaser', 'Triple Laser', 5, lin(1950, 3450), { ae: 'MT_TRIPLE_LASER', h: 3, r: 'r', bl: 1, cr: 1, sp: [60, 0], c: [1, 0], fc: 0.5, d: 0.25, cd: 0.35 });
 
+  // ---- YggIdle: % e golpes conferidos com as descrições do jogo (nov/2026).
+  // ph: 1 = m é % por golpe (o dano total é m x golpes); sem ph, m é o total dividido entre os golpes.
+  // hl: golpes que mudam ('bowl' 3 com espada de duas mãos / 2 com outras; 'size' 1/2/3 por tamanho; 'lv2' nível + 2;
+  // 'wblade' 1,2,2,3,3,4,4,5,5,6; 'dagger2' dobra com adaga). sp2: dobra com lança. sf: multiplica por 1 + atributo x fator.
+  function fix(id, o) { if (S[id]) Object.assign(S[id], o); }
+  fix('bowling', { ph: 1, hl: 'bowl' });                                   // 140% a 500% por golpe, 2 golpes (3 com espada de duas mãos)
+  fix('pierce', { ph: 1, hl: 'size' });                                    // 110% a 200% por golpe, 1/2/3 golpes por tamanho
+  fix('spiral', { m: lin(150, 50), h: 1 });                                // 200% a 400%
+  fix('brandish', { m: lin(400, 100), h: 3, ph: 1 });                      // 500% a 1.400% por golpe, 3 golpes
+  fix('charge', { m: lin(700, 0) });                                       // 700%
+  fix('pressure', { k: 'm', e: 'Sagrado', m: lin(500, 150), h: 3, ph: 1, bl: 1 }); // mágico, 650% a 1.250% por golpe x Nível de Base / 100, 3 golpes
+  fix('holycross', { m: lin(100, 35), h: 1, sp2: 1 });                     // 135% a 450%, o dobro com lança
+  fix('grandcross', { m: lin(100, 40), h: 3, ph: 1 });                     // 140% a 500%, três acertos
+  fix('shieldboom', { m: lin(0, 80) });                                    // 80% a 400%
+  fix('shieldchain', { m: lin(300, 200), h: 1 });                          // 500% a 1.300%
+  fix('overbrand', { m: lin(0, 140), strl: 1, bl: 1, cr: 1 });             // 140% x nível + FOR x nível, x Nível de Base / 100
+  fix('napalm', { m: lin(70, 10) });                                       // 80% a 170%
+  fix('thunderstorm', { m: lin(100, 0) });                                 // 100% por raio, 1 raio por nível
+  fix('frostdiver', { m: lin(100, 10) });                                  // 110% a 200%
+  fix('jt', { hl: 'lv2' });                                                // 100% por choque, nível + 2 choques
+  fix('fireball', { m: lin(140, 20) });                                    // 160% a 340%
+  fix('wom', { m: lin(200, 0), max: 5 });                                  // 200% por espeto, 1 espeto por nível (até 5)
+  fix('hwind', { m: lin(0, 125), hl: null, h: 1 });                        // 125% a 625%
+  fix('ds', { ph: 1 });                                                    // 110% a 200% por flecha, 2 flechas
+  fix('shower', { m: lin(150, 10) });                                      // 160% a 250%
+  fix('charge2', { m: lin(500, 100), bl: 1 });                             // 600% a 1.000% x Nível de Base / 100
+  fix('sharp', { m: lin(900, 60), max: 10, sf: { dex: 0.002 } });          // 960% a 1.500% x (1 + (DES / 2) / 250)
+  fix('phantasmic', { m: lin(500, 0), e: 'Vento' });                       // 500% Vento
+  fix('turn', { m: lin(0, 250), e: 'Neutro' });                            // 250% a 2.500%, Neutro contra monstros
+  fix('judex', { h: 3, ph: 1, bl: 1 });                                    // 1.320% a 3.000% por golpe x Nível de Base / 100, 3 golpes
+  fix('adoramus', { h: 10, ph: 1, bl: 1 });                                // 550% a 2.800% por golpe x Nível de Base / 100, 10 golpes
+  fix('fingeroff', { m: lin(600, 200), h: 1 });                            // 800% a 1.600%
+  fix('chain', { m: lin(0, 200), max: 10, h: 1, a: 25, bl: 1 });           // 200% a 2.000% x Nível de Base / 100, área 5x5
+  fix('exp', { m: lin(0, 100) });                                          // 100% a 500%
+  fix('axeboom', { bl: 1 });                                               // 300% a 500% (+ peso) x Nível de Base / 100
+  fix('acidterror', { m: lin(0, 200), h: 2, a: 9 });                       // 200% a 1.000% divididos em 2 golpes, área 3x3
+  fix('demonstration', { m: lin(0, 50), h: 10, ph: 1 });                   // 50% x nível por golpe, 10 golpes
+  fix('sonicblow', { m: lin(200, 100) });                                  // 300% a 1.200%
+  fix('meteor', { m: lin(200, 100), bl: 1 });                              // 300% a 1.200% x Nível de Base / 100
+  fix('backstab', { m: lin(300, 40), h: 1 });                              // 340% a 700%
+  fix('raid', { m: lin(100, 40), cr: 1 });                                 // 140% a 300%
+  fix('desperado', { m: lin(50, 50), h: 4, ph: 1 });                       // 100% a 550% por tiro; ~36% dos 10 tiros acertam o alvo
+  fix('spread', { m: lin(600, 30), sf: { dex: 0.004, agi: 0.004 } });      // 630% a 900% x (1 + (DES + AGI) / 250)
+  fix('tracking', { m: lin(200, 100), a: 25 });                            // 300% a 1.200%, área 5x5
+  fix('katon', { m: lin(90, 0) });                                         // 90% por pétala
+  fix('windblade', { m: lin(150, 0), hl: 'wblade' });                      // 150% por lâmina
+  fix('throwshuriken', { m: lin(100, 5) });                                // 105% a 150%
+  fix('ninjaclose', { m: lin(50, 150), h: 1 });                            // 200% a 800%
+  fix('tornado', { m: lin(160, 20), max: 7 });                             // 180% a 300%
+  fix('heel', { m: lin(160, 20), max: 7 });                                // 180% a 300%
+  fix('counter', { m: lin(190, 30), max: 7 });                             // 220% a 400%
+  fix('fatalmenace', { ph: 1, hl: 'dagger2' });                            // 120% a 1.200%, golpes dobram com adaga
+  fix('rushstrike', { m: lin(0, 1750), ph: 1 });                           // 1.750% a 8.750% por golpe, 7 golpes
+  fix('triplelaser', { m: lin(650, 1150), ph: 1 });                        // 1.800% a 6.400% por raio, 3 raios
+
   YGG.skills = S;
   var all = function (a) { return a; };
   var Wall = ['Fist', 'Dagger', '1hSword', '2hSword', '1hSpear', '2hSpear', '1hAxe', '2hAxe', 'Mace', '2hMace', 'Staff', '2hStaff', 'Bow', 'Knuckle', 'Musical', 'Whip', 'Book', 'Katar', 'Revolver', 'Rifle', 'Gatling', 'Shotgun', 'Grenade', 'Huuma'];

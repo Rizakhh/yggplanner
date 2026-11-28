@@ -541,3 +541,10 @@ img.mmapbig{width:100%;border-radius:10px;border:1px solid var(--line)}
 .gcl{display:flex;gap:8px;align-items:center;margin-top:4px}
 .gcl code{flex:1;min-width:0;overflow-wrap:anywhere;font:12px/1.4 var(--font-mono,ui-monospace,monospace);user-select:all;background:rgba(0,0,0,.25);padding:4px 6px;border-radius:5px}
 .gcw{margin-top:4px;font-size:11px;color:var(--warn)}
+.skfcard{margin-top:14px}.skfbar{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 6px}.skfbar .skfq{flex:1 1 240px;min-width:0}.skfbar select{flex:0 1 200px;min-width:0}
+.skfc{display:block;color:var(--muted);margin-bottom:8px}.skfl{display:flex;flex-direction:column;gap:6px}
+.skfi{border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.02)}.skfi[open]{background:rgba(255,255,255,.04)}
+.skfi summary{display:flex;align-items:center;gap:10px;padding:7px 10px;cursor:pointer;list-style:none}.skfi summary::-webkit-details-marker{display:none}
+.skfn{flex:1;min-width:0;display:flex;flex-direction:column}.skfn small{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.skfk{font-size:11px;padding:2px 8px;border-radius:99px;border:1px solid currentColor;opacity:.85}.skfk.kf{color:#e0905f}.skfk.km{color:#7fa6ee}.skfk.ko{color:var(--muted)}
+.skfb{padding:0 12px 12px}.skfb .bul li{font-size:13px;line-height:1.5}.skfb .stip{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}

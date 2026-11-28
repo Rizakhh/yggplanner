@@ -6,10 +6,17 @@
   var D = {};
 
   function skillRatio(s, lv) { return s.m[0] + s.m[1] * lv; }
-  function hitsOf(s, lv, R) {
+  function hitsOf(s, lv, R, mon) {
     if (!s.hl) return s.h || 1;
     switch (s.hl) {
       case 'lv': return lv;
+      case 'lv2': return lv + 2;
+      // Impacto de Tyr: 3 golpes com espada de duas mãos, 2 com as outras
+      case 'bowl': return R && R.wtype === '2hSword' ? 3 : 2;
+      // Perfurar: 1, 2 ou 3 golpes conforme o tamanho do alvo
+      case 'size': return ({ 'Pequeno': 1, 'Médio': 2, 'Grande': 3 })[mon && mon.size] || 2;
+      case 'wblade': return Math.floor(lv / 2) + 1;
+      case 'dagger2': return R && R.wtype === 'Dagger' ? 2 : 1;
       // Onda Psíquica: nível + 2 ondas, o dobro com Livro ou Cajado
       case 'pwave': return (lv + 2) * (R && /Book|Staff/.test(R.wtype || '') ? 2 : 1);
       // Esfera d'Água: 1, 1, 9, 9, 25 golpes (com água em volta)
@@ -83,6 +90,9 @@
     var r = skillRatio(s, lv);
     if (!R) return r;
     if (s.si) r += s.si * (R.int || 0);
+    if (s.strl) r += s.strl * lv * (R.str || 0);
+    if (s.sp2 && /Spear/.test(R.wtype || '')) r *= 2;
+    if (s.sf) r *= 1 + Object.keys(s.sf).reduce(function (a, k) { return a + s.sf[k] * (R[k] || 0); }, 0);
     if (s.bl) r *= (R.lv || 100) / 100;
     var bn = skillBonus(R, s); if (bn) r *= 1 + bn / 100;
     return r;
@@ -97,10 +107,11 @@
     var atkEle = s && s.e ? s.e : (o.weaponEle || 'Neutro');
     var tbl = mon.tbl || {};
     var eleMult = (tbl[atkEle] != null ? tbl[atkEle] : 100) / 100;
-    var hits = s ? hitsOf(s, lv, R) : 1;
+    var hits = s ? hitsOf(s, lv, R, mon) : 1;
     var isMagic = s && s.k === 'm';
     var ratio = s ? ratioFull(R, s, lv) : 100;
-    var perHitRatio = s && s.hl ? ratio : ratio / hits;
+    // hl ou ph: a % é por golpe; senão é o total dividido entre os golpes
+    var perHitRatio = s && (s.hl || s.ph) ? ratio : ratio / hits;
     var res = { hits: hits, isMagic: isMagic, atkEle: atkEle, eleMult: eleMult, ratio: ratio };
     if (isMagic) {
       var mdefEff = Math.max(0, mon.mdef * (1 - Math.min(100, (B['ignMdef:' + (isBoss ? 'Boss' : 'Normal')] || 0) + (B['ignMdef:all'] || 0) + (B['ignMdef:race:' + mon.race] || 0)) / 100));

@@ -4,6 +4,22 @@
 window.YGG = window.YGG || {};
 YGG.changelog = [
   {
+    v: '0.2.15', d: '2026-11-28', t: 'Habilidades de vários golpes e fórmulas das habilidades',
+    g: [
+      ['Simulação', [
+        'Habilidades de vários golpes agora contam o dano de todos os golpes: o % do jogo vale para cada golpe, em vez de ser dividido entre eles (Judex 3 golpes, Adoramus 10, Brandir Lança 3, Impacto de Tyr, Perfurar, Lanças de Fogo e outras).',
+        'Revisão das habilidades do planner com os textos do jogo: % por nível, número de golpes, elemento e nível máximo corrigidos em mais de 40 habilidades.',
+        'Novas regras: dano × nível de base / 100 onde o jogo usa, golpes conforme a arma (Impacto de Tyr, Ofensiva Fatal) ou o tamanho do alvo (Perfurar), dano dobrado com lança (Crux Divinum), bônus de FOR (Disparo Perfurante) e de DES/AGI (Rajada Certeira, Tiro Espalhado).',
+        'A dica da habilidade mostra a fórmula “por golpe × N golpes” quando o % vale para cada golpe.',
+        'O campo “Repetições (Monte Carlo)” passou a se chamar só Repetições.'
+      ]],
+      ['Fórmulas', [
+        'Novo card Fórmulas das habilidades: todas as habilidades das árvores do jogo, com busca (português, inglês ou código) e filtros por classe e por tipo (físico, mágico, suporte).',
+        'Cada habilidade de dano mostra a fórmula, os golpes, o elemento e o valor com a sua build; ao abrir, aparecem a descrição do YggIdle e a tabela por nível.'
+      ]]
+    ]
+  },
+  {
     v: '0.2.14', d: '2026-11-27', t: 'Comandos do jogo (@itemopcao)',
     g: [
       ['Equipamentos', [
