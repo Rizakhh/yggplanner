@@ -1392,10 +1392,12 @@
     return '';
   }
   var CMD_SLOTS = ['weapon', 'shield', 'headT', 'headM', 'headB', 'body', 'cloak', 'shoes', 'accL', 'accR'];
+  var SHD_SLOTS = ['sW', 'sS', 'sB', 'sF', 'sAL', 'sAR'];
+  function cmdSlot(sl) { return CMD_SLOTS.indexOf(sl) >= 0 || SHD_SLOTS.indexOf(sl) >= 0; }
   // {cmd, warn[]} do item no slot (null se o slot não tem item ou não aceita o comando)
   function gameCmd(sl) {
     var e = b.eq[sl], it = e && Y.itemById[e.id];
-    if (!it || CMD_SLOTS.indexOf(sl) < 0 || !slotAllowed(sl)) return null;
+    if (!it || !cmdSlot(sl) || !slotAllowed(sl)) return null;
     var rar = e.rar || 0, warn = [], parts = [], seen = {};
     (e.lines || []).slice(0, Y.bonus.rarities[rar].max).forEach(function (L) {
       if (!L || !L.t || !L.v) return;
@@ -1416,6 +1418,7 @@
     if (e.ref) extra.push('refino +' + e.ref);
     if ((e.cards || []).some(Boolean) || (e.gem || []).some(Boolean)) extra.push('cartas/gemas');
     if (E.canEnch(it) && (e.ench || []).some(Boolean)) extra.push('encantamentos');
+    if (it.jl && SHD_SLOTS.indexOf(sl) >= 0) extra.push('linhas do item');
     if (extra.length) warn.push('não vem pelo comando: ' + extra.join(', '));
     return { sl: sl, it: it, cmd: ['@itemopcao', it.id, cr].concat(parts).join(' '), warn: warn };
   }
@@ -1423,11 +1426,11 @@
     function fb() { var ta = h('textarea', { style: 'position:fixed;left:-9999px' }); ta.value = t; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); ok && ok(); } catch (x) { toast('Não foi possível copiar'); } ta.remove(); }
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(function () { ok && ok(); }, fb); else fb();
   }
-  function openGameCmds() {
-    var list = CMD_SLOTS.map(gameCmd).filter(Boolean), pos = 0, rows = [];
+  function openGameCmds(slots) {
+    var shd = slots === SHD_SLOTS, list = (shd ? SHD_SLOTS : CMD_SLOTS).map(gameCmd).filter(Boolean), pos = 0, rows = [];
     var c = h('div', null, [h('h3', null, ['Comandos do jogo']),
       h('div', { class: 'tip' }, ['Cada comando cria um item novo (só no servidor de testes do evento) com a raridade e os bônus aleatórios do planner, até Épico. O chat aceita um comando por mensagem: use Copiar próximo, cole no jogo, envie e volte para o próximo. Para conferir as faixas no jogo: @linhas <ID do item>.'])]);
-    if (!list.length) { c.appendChild(h('div', { class: 'mut' }, ['Nenhum equipamento comum equipado.'])); c.appendChild(h('div', { class: 'row' }, [h('button', { on: { click: closeModal } }, ['Fechar'])])); openModal(c); return; }
+    if (!list.length) { c.appendChild(h('div', { class: 'mut' }, [shd ? 'Nenhum equipamento sombrio equipado.' : 'Nenhum equipamento comum equipado.'])); c.appendChild(h('div', { class: 'row' }, [h('button', { on: { click: closeModal } }, ['Fechar'])])); openModal(c); return; }
     var nx = h('button', { class: 'pri' });
     function mark(i) { rows[i].classList.add('done'); }
     function label() { nx.textContent = pos < list.length ? 'Copiar próximo (' + (pos + 1) + '/' + list.length + ')' : 'Todos copiados · recomeçar'; }
@@ -1478,9 +1481,9 @@
       h('span', null, [h('small', null, ['ASPD']), h('b', null, [fmt(R.aspdEff)])]),
       h('span', null, [h('small', null, ['Peso']), h('b', { class: R.weight > R.maxWeight ? 'bad' : '' }, [fmt(R.weight) + ' / ' + fmt(R.maxWeight)])])]));
     t.appendChild(win);
-    if (eqMode === 'base') {
+    if (eqMode === 'base' || eqMode === 'shadow') {
       var gb = h('button', { title: 'Gera um comando @itemopcao por equipamento para criar os itens no jogo' }, ['Comandos do jogo']);
-      gb.addEventListener('click', openGameCmds);
+      gb.addEventListener('click', function () { openGameCmds(eqMode === 'shadow' ? SHD_SLOTS : CMD_SLOTS); });
       t.appendChild(h('div', { class: 'row gcbar' }, [gb, h('small', { class: 'mut' }, ['Cria os itens no jogo com @itemopcao (raridade e bônus aleatórios).'])]));
     }
     var ed = slotEditor(selSlot); ed.id = 'slotEd'; t.appendChild(ed);
@@ -1591,7 +1594,7 @@
     c.appendChild(h('div', { class: 'row' }, [
       h('button', { class: 'pri', on: { click: function () { pickerModal(itemsFor(sl), 'Escolher ' + slotName(sl), function (x) { if (!x) return; b.eq[sl] = E.newEq(x.id); if (sl === 'weapon' && x.th) delete b.eq.shield; refresh(true); }, { icon: true, cli: E.EXTRA_SLOT[sl] ? true : undefined }); } } }, [it ? 'Trocar item' : 'Escolher item']),
       it ? h('button', { on: { click: function () { delete b.eq[sl]; refresh(true); } } }, ['Remover']) : null,
-      it && CMD_SLOTS.indexOf(sl) >= 0 ? h('button', { title: 'Copia o comando @itemopcao deste item', on: { click: function () { var o = gameCmd(sl); if (o) copyPlain(o.cmd, function () { toast('Copiado: ' + o.cmd + (o.warn.length ? ' · ' + o.warn.join('; ') : '')); }); } } }, ['Copiar comando']) : null,
+      it && cmdSlot(sl) ? h('button', { title: 'Copia o comando @itemopcao deste item', on: { click: function () { var o = gameCmd(sl); if (o) copyPlain(o.cmd, function () { toast('Copiado: ' + o.cmd + (o.warn.length ? ' · ' + o.warn.join('; ') : '')); }); } } }, ['Copiar comando']) : null,
       it ? h('span', { class: 'eqi lg' }, [itemIcon(it.id)]) : null, it ? h('b', null, [it.n]) : null, it ? idTag(it) : null, it ? cliTag(it) : null]));
     if (!it) return c;
     // descrição

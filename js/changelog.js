@@ -4,6 +4,15 @@
 window.YGG = window.YGG || {};
 YGG.changelog = [
   {
+    v: '0.2.15-hf1', d: '2026-11-28', t: 'Comando dos equipamentos sombrios',
+    g: [
+      ['Equipamentos', [
+        'Os equipamentos sombrios ganharam o botão Copiar comando no editor do slot, e o botão Comandos do jogo também aparece no modo Sombrio, com a lista dos itens sombrios equipados.',
+        'Refino e linhas próprias do item sombrio não vêm pelo comando (aviso na lista).'
+      ]]
+    ]
+  },
+  {
     v: '0.2.15', d: '2026-11-28', t: 'Habilidades de vários golpes e fórmulas das habilidades',
     g: [
       ['Simulação', [
